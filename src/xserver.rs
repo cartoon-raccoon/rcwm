@@ -1,4 +1,4 @@
-use xcb_util::{ewmh, cursor};
+use xcb_util::{ewmh, icccm, cursor};
 use anyhow::{Context, Result};
 
 use std::ops::Index;
@@ -175,13 +175,56 @@ impl<'a> XConn<'a> {
     }
 
     pub fn change_window_attributes(&self, window: XWindowID, attrs: &[(u32, u32)]) {
+        debug!("Changing attributes for window {}", window);
         xcb::change_window_attributes(self.conn, window, attrs);
+    }
+
+    pub fn configure_window(&self, window: XWindowID, attrs: &[(u16, u32)]) {
+        debug!("Configuring window {}", window);
+        xcb::configure_window(self.conn, window, attrs);
     }
 
     pub fn query_tree(&self, window: XWindowID) -> Result<Vec<XWindowID>> {
         xcb::query_tree(self.conn, window).get_reply()
             .map(|ok| ok.children().to_owned())
             .map_err(|err| anyhow::Error::new(err))
+    }
+
+    pub fn map_window(&self, window_id: XWindowID) {
+        debug!("Mapping window {}", window_id);
+
+        let cookie = xcb::map_window(self.conn, window_id);
+        if let Err(e) = cookie.request_check() {
+            error!("Could not map window {}: {}", window_id, e)
+        }
+    }
+
+    pub fn unmap_window(&self, window_id: XWindowID) {
+        debug!("Unmapping window {}", window_id);
+
+        let cookie = xcb::unmap_window(self.conn, window_id);
+        if let Err(e) = cookie.request_check() {
+            error!("Could not unmap window {}: {}", window_id, e)
+        }
+    }
+
+    pub fn set_input_focus(&self, window_id: XWindowID) {
+        debug!("Setting focus for window {}", window_id);
+
+        xcb::set_input_focus(self.conn, xcb::INPUT_FOCUS_POINTER_ROOT as u8, window_id, xcb::CURRENT_TIME);
+    }
+
+    pub fn get_wm_protocols(&self, window: XWindowID) -> Option<Vec<xcb::Atom>> {
+        debug!("Getting protocols for window {}", window);
+        match icccm::get_wm_protocols(self.conn, window, self.atoms.WM_PROTOCOLS)
+        .get_reply() {
+            Ok(reply) => {
+                Some(reply.atoms().to_owned())
+            }
+            Err(_e) => {
+                None
+            }
+        }
     }
 
     pub fn change_window_attributes_checked(&self, window: XWindowID, attrs: &[(u32, u32)]) -> Result<()> {
