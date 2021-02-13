@@ -5,7 +5,9 @@ mod wm;
 mod xserver;
 mod window;
 mod values;
+mod desktop;
 mod workspace;
+mod layout;
 
 use wm::WM;
 
