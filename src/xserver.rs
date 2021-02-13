@@ -97,6 +97,50 @@ impl From<XWindowID> for XWindow {
     }
 }
 
+#[allow(dead_code)]
+impl XWindow {
+    pub fn update_geometry_conn(&mut self, conn: &XConn) {
+        match conn.get_geometry(self.id) {
+            Ok(geom) => {
+                debug!(
+                    "Updating geometry (conn):\nx: {}, y: {}, h: {}, w: {}", 
+                    geom.x, geom.y, geom.height, geom.width
+                );
+                self.geom = geom;
+            }
+
+            Err(e) => {
+                error!("{}", e);
+                return
+            }
+        }
+    }
+
+    pub fn update_geometry(&mut self, geom: Geometry) {
+        debug!(
+            "Updating geometry:\nx: {}, y: {}, h: {}, w: {}", 
+            geom.x, geom.y, geom.height, geom.width
+        );
+        self.geom = geom;
+    }
+
+    pub fn update_width(&mut self, dx: i32) {
+        self.geom.width += dx;
+    }
+
+    pub fn update_height(&mut self, dy: i32) {
+        self.geom.height += dy;
+    }
+
+    pub fn update_pos_x(&mut self, dx: i32) {
+        self.geom.x += dx;
+    }
+
+    pub fn update_pos_y(&mut self, dy: i32) {
+        self.geom.y += dy;
+    }
+}
+
 #[derive(Clone, Copy)]
 pub struct XConn<'a> {
     pub conn: &'a ewmh::Connection,
