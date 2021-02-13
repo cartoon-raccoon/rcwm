@@ -3,15 +3,9 @@ use xcb_util::ewmh;
 
 mod wm;
 mod xserver;
+mod window;
 
 use wm::WM;
-
-const ROOT_ATTRS: [(u32, u32); 1] = [
-    (
-        xcb::CW_EVENT_MASK, 
-        xcb::EVENT_MASK_SUBSTRUCTURE_REDIRECT | xcb::EVENT_MASK_STRUCTURE_NOTIFY
-    )
-        ];
 
 /*
  * Step 1: Get root window ID
