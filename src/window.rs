@@ -83,6 +83,14 @@ impl Window {
     pub fn resize(&mut self, conn: &XConn, ) {
 
     }
+
+    pub fn set_supported(&mut self, conn: &XConn) {
+        if let Some(protocols) = conn.get_wm_protocols(self.id()) {
+            for protocol in protocols {
+                self.protocols.insert(protocol);
+            }
+        }
+    }
 }
 
 #[derive(Default)]
@@ -90,6 +98,7 @@ pub struct Windows {
     windows: VecDeque<Window>,
 }
 
+#[allow(dead_code)]
 impl Windows {
     #[inline(always)]
     pub fn len(&self) -> usize {
@@ -127,15 +136,29 @@ impl Windows {
                 return Some(idx)
             }
 
-            idx += 1;
+            idx +=  1;
         }
 
         None
     }
 
-    pub fn iter(&mut self) -> WindowsIter<'_> {
-        WindowsIter {
-            inner: self.windows.iter(),
+    pub fn iter(&mut self) -> impl Iterator<Item = &Window> {
+        self.windows.iter()
+    }
+
+    pub fn iter_rev(&mut self) -> impl Iterator<Item = &Window> {
+        self.windows.iter().rev()
+    }
+
+    pub fn focused(&self) -> Option<&Window> {
+        self.windows.get(0)
+    }
+
+    pub fn is_focused(&self, id: XWindowID) -> bool {
+        if let Some(window) = self.focused() {
+            return window.id() == id
+        } else {
+            false
         }
     }
 }
@@ -151,17 +174,5 @@ impl Index<usize> for Windows {
 impl IndexMut<usize> for Windows {
     fn index_mut(&mut self, idx: usize) -> &mut Window {
         &mut self.windows[idx]
-    }
-}
-
-pub struct WindowsIter<'a> {
-    inner: Iter<'a, Window>,
-}
-
-impl<'a> Iterator for WindowsIter<'a> {
-    type Item = &'a Window;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.inner.next()
     }
 }
