@@ -1,16 +1,15 @@
-use xcb_util::ewmh;
+use xcb_util::{ewmh, cursor};
 use anyhow::{Context, Result};
 
 use std::ops::Index;
 
 use crate::window::Geometry;
+use crate::values;
 
-pub const ROOT_ATTRS: [(u32, u32); 1] = [
-    (
-        xcb::CW_EVENT_MASK, 
-        xcb::EVENT_MASK_SUBSTRUCTURE_REDIRECT | xcb::EVENT_MASK_STRUCTURE_NOTIFY
-    )
-];
+// #[derive(Clone, Copy, Debug)]
+// pub enum CursorIndex {
+//     LeftCursor,
+// }
 
 /// The list of atoms interned from the X Server by the WM.
 #[allow(non_snake_case)]
@@ -83,6 +82,7 @@ pub struct XWindow {
 }
 
 impl PartialEq for XWindow {
+    #[inline(always)]
     fn eq(&self, other: &Self) -> bool {
         self.id == other.id
     }
@@ -101,13 +101,16 @@ impl From<XWindowID> for XWindow {
 pub struct XConn<'a> {
     pub conn: &'a ewmh::Connection,
     pub atoms: InternedAtoms,
+    pub cursor: xcb::Cursor,
 }
 
+#[allow(dead_code)]
 impl<'a> XConn<'a> {
     pub fn new(xconn: &'a ewmh::Connection) -> Self {
         Self {
             conn: xconn,
             atoms: InternedAtoms::new(xconn),
+            cursor: 0,
         }
     }
 
@@ -115,11 +118,30 @@ impl<'a> XConn<'a> {
         self.conn.get_setup()
     }
 
+    pub fn create_cursor(&mut self, glyph: u16) -> Result<()> {
+        debug!("Creating cursor");
+        let cursor_id = cursor::create_font_cursor_checked(self.conn, glyph)?;
+        self.cursor = cursor_id;
+        Ok(())
+    }
+
+    pub fn set_cursor(&mut self, window: XWindowID) {
+        debug!("Setting cursor for {}", window);
+        self.change_window_attributes(window, &values::cursor_attrs(self.cursor))
+    }
+
     pub fn change_window_attributes(&self, window: XWindowID, attrs: &[(u32, u32)]) {
         xcb::change_window_attributes(self.conn, window, attrs);
     }
 
+    pub fn query_tree(&self, window: XWindowID) -> Result<Vec<XWindowID>> {
+        xcb::query_tree(self.conn, window).get_reply()
+            .map(|ok| ok.children().to_owned())
+            .map_err(|err| anyhow::Error::new(err))
+    }
+
     pub fn change_window_attributes_checked(&self, window: XWindowID, attrs: &[(u32, u32)]) -> Result<()> {
+        debug!("Changing window attributes");
         xcb::change_window_attributes_checked(self.conn, window, attrs).request_check()
             .with_context(|| String::from("Could not change window attributes"))
     }
@@ -129,6 +151,7 @@ impl<'a> XConn<'a> {
     }
 
     pub fn get_geometry(&self, window_id: XWindowID) -> Result<Geometry> {
+        debug!("Getting geometry");
         xcb::get_geometry(self.conn, window_id).get_reply()
             .with_context(|| {
                 String::from("Failed to get window geometry")
@@ -141,5 +164,15 @@ impl<'a> XConn<'a> {
                     ok.height() as i32,
                 )
             ))
+    }
+
+    pub fn next_event(&self) -> xcb::GenericEvent {
+        self.conn.flush();
+
+        if let Some(event) = self.conn.poll_for_queued_event() {
+            event
+        } else {
+            self.conn.wait_for_event().unwrap()
+        }
     }
 }
