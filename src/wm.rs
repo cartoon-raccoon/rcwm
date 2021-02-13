@@ -5,6 +5,7 @@ use xcb_util::{
 
 use crate::values::ROOT_ATTRS;
 use crate::xserver::{XConn};
+use crate::window::{Screen};
 
 #[derive(Clone, Copy)]
 #[allow(dead_code)]
@@ -44,6 +45,10 @@ impl<'a> WM<'a> {
 
         xconn.set_cursor(root_id);
 
+        let mut screen = Screen::new(screen_idx, root_id);
+
+        screen.xwindow.update_geometry_conn(&xconn);
+
         let new = Self {
             conn: xconn,
             root: screen_idx,
@@ -60,7 +65,7 @@ impl<'a> WM<'a> {
     //using a mutable reference statically ensures there is only one instance running
     pub fn run(&mut self) -> ! {
         info!("Running WM");
-        
+
         loop {
             let event = self.conn.next_event();
 
