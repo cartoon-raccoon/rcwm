@@ -1,6 +1,8 @@
 use xcb_util::ewmh;
 use anyhow::{Context, Result};
 
+use std::ops::Index;
+
 use crate::window::Geometry;
 
 pub const ROOT_ATTRS: [(u32, u32); 1] = [
@@ -10,8 +12,71 @@ pub const ROOT_ATTRS: [(u32, u32); 1] = [
     )
 ];
 
+/// The list of atoms interned from the X Server by the WM.
+#[allow(non_snake_case)]
+#[derive(Clone, Copy)]
+pub struct InternedAtoms {
+    pub SUPPORTED: xcb::Atom,
+    
+    pub WM_DELETE_WINDOW: xcb::Atom,
+
+    pub WM_PROTOCOLS: xcb::Atom,
+
+    pub WM_WINDOW_TYPE_NORMAL: xcb::Atom,
+    pub WM_WINDOW_TYPE_DIALOG: xcb::Atom,
+    pub WM_WINDOW_TYPE_TOOLBAR: xcb::Atom,
+    pub WM_WINDOW_TYPE_UTILITY: xcb::Atom,
+    pub WM_WINDOW_TYPE_SPLASH: xcb::Atom,
+    pub WM_STATE: xcb::Atom,
+}
+
+/// You really shouldn't be using this.
+impl Index<usize> for InternedAtoms {
+    type Output = xcb::Atom;
+
+    fn index(&self, idx: usize) -> &xcb::Atom {
+        match idx {
+            0 => &self.SUPPORTED,
+            1 => &self.WM_DELETE_WINDOW,
+            2 => &self.WM_PROTOCOLS,
+            3 => &self.WM_WINDOW_TYPE_NORMAL,
+            4 => &self.WM_WINDOW_TYPE_DIALOG,
+            5 => &self.WM_WINDOW_TYPE_TOOLBAR,
+            6 => &self.WM_WINDOW_TYPE_UTILITY,
+            7 => &self.WM_WINDOW_TYPE_SPLASH,
+            8 => &self.WM_STATE,
+            // yeah, if you index anything more than 8, you'll probably get a null pointer.
+            _ => &0,
+        }
+    }
+}
+
+impl InternedAtoms {
+    pub fn new(conn: &ewmh::Connection) -> Self {
+        Self {
+            SUPPORTED: conn.SUPPORTED(),
+
+            WM_DELETE_WINDOW: xcb::intern_atom(conn, false, "WM_DELETE_WINDOW")
+                .get_reply()
+                .unwrap_or_else(|e| panic!("{}", e))
+                .atom(),
+            
+            WM_PROTOCOLS: conn.WM_PROTOCOLS(),
+
+            WM_WINDOW_TYPE_NORMAL: conn.WM_WINDOW_TYPE_NORMAL(),
+            WM_WINDOW_TYPE_DIALOG: conn.WM_WINDOW_TYPE_DIALOG(),
+            WM_WINDOW_TYPE_TOOLBAR: conn.WM_WINDOW_TYPE_TOOLBAR(),
+            WM_WINDOW_TYPE_UTILITY: conn.WM_WINDOW_TYPE_UTILITY(),
+            WM_WINDOW_TYPE_SPLASH: conn.WM_WINDOW_TYPE_SPLASH(),
+
+            WM_STATE: conn.WM_STATE(),
+        }
+    }
+}
+
 pub type XWindowID = xcb::Window;
 
+#[derive(Debug, Clone, Copy)]
 pub struct XWindow {
     pub id: XWindowID,
     pub geom: Geometry,
@@ -32,14 +97,17 @@ impl From<XWindowID> for XWindow {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct XConn<'a> {
     pub conn: &'a ewmh::Connection,
+    pub atoms: InternedAtoms,
 }
 
 impl<'a> XConn<'a> {
     pub fn new(xconn: &'a ewmh::Connection) -> Self {
         Self {
             conn: xconn,
+            atoms: InternedAtoms::new(xconn),
         }
     }
 
