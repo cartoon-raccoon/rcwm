@@ -19,7 +19,7 @@ macro_rules! info {
         (println!(concat!("[*] ", $fmt)));
     };
     ($fmt:expr, $($arg:tt)*) => {
-        (println!(concat!("[*] ", $fmt), $(arg)*));
+        (println!(concat!("[*] ", $fmt), $($arg)*));
     };
 }
 
@@ -28,7 +28,7 @@ macro_rules! fatal {
         (panic!(println!(concat!("[FATAL] ", $fmt))));
     };
     ($fmt:expr, $($arg:tt)*) => {
-        (panic!(println!(concat!("[FATAL] ", $fmt), $(arg)*)));
+        (panic!(println!(concat!("[FATAL] ", $fmt), $($arg)*)));
     };
 }
 
@@ -37,7 +37,7 @@ macro_rules! error {
         (println!(concat!("[ERROR] ", $fmt)));
     };
     ($fmt:expr, $($arg:tt)*) => {
-        (println!(concat!("[ERROR] ", $fmt), $(arg)*));
+        (println!(concat!("[ERROR] ", $fmt), $($arg)*));
     };
 }
 
