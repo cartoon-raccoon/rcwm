@@ -4,7 +4,7 @@ macro_rules! debug {
         (println!(concat!("[DEBUG] ", $fmt)));
     };
     ($fmt:expr, $($arg:tt)*) => {
-        (println!(concat!("[DEBUG] ", $fmt), $(arg)*));
+        (println!(concat!("[DEBUG] ", $fmt), $($arg)*));
     };
 }
 
@@ -14,12 +14,30 @@ macro_rules! debug {
     ($fmt:expr, $($arg:tt)*) => {};
 }
 
+macro_rules! info {
+    ($fmt:expr) => {
+        (println!(concat!("[*] ", $fmt)));
+    };
+    ($fmt:expr, $($arg:tt)*) => {
+        (println!(concat!("[*] ", $fmt), $(arg)*));
+    };
+}
+
 macro_rules! fatal {
     ($fmt:expr) => {
         (panic!(println!(concat!("[FATAL] ", $fmt))));
     };
     ($fmt:expr, $($arg:tt)*) => {
         (panic!(println!(concat!("[FATAL] ", $fmt), $(arg)*)));
+    };
+}
+
+macro_rules! error {
+    ($fmt:expr) => {
+        (println!(concat!("[ERROR] ", $fmt)));
+    };
+    ($fmt:expr, $($arg:tt)*) => {
+        (println!(concat!("[ERROR] ", $fmt), $(arg)*));
     };
 }
 
