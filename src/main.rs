@@ -1,11 +1,16 @@
-use xcb::base::Connection;
-use xcb_util::ewmh;
+#[macro_use]
+mod log;
 
 mod wm;
 mod xserver;
 mod window;
+mod values;
+mod workspace;
 
 use wm::WM;
+
+use xcb::base::Connection;
+use xcb_util::ewmh;
 
 /*
  * Step 1: Get root window ID
@@ -22,5 +27,7 @@ fn main() {
         .map_err(|(err, _)| { err })
         .expect("Failed to connect via EWMH");
 
-    let wm = WM::register(&conn, screen_idx);
+    let mut wm = WM::register(&conn, screen_idx);
+
+    wm.run()
 }
