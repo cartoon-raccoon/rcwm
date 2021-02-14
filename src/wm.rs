@@ -7,6 +7,7 @@ use crate::values::ROOT_ATTRS;
 use crate::xserver::{XConn, XWindowID};
 use crate::window::{Screen};
 use crate::desktop::Desktop;
+use crate::layout::LayoutType;
 
 #[derive(Clone)]
 #[allow(dead_code)]
@@ -15,6 +16,7 @@ pub struct WM<'a> {
     desktop: Desktop,
     screen: Screen,
     root: i32,
+    layout: LayoutType,
 }
 
 impl<'a> WM<'a> {
@@ -57,6 +59,7 @@ impl<'a> WM<'a> {
             desktop: Desktop::new(),
             screen: Screen::new(screen_idx, root_id),
             root: screen_idx,
+            layout: LayoutType::Floating,
         };
 
         for &existing in &new.conn.query_tree(root_id).unwrap() {
