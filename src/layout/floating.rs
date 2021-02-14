@@ -3,7 +3,7 @@ use crate::workspace::Workspace;
 use crate::window::{Window, Screen};
 use crate::values;
 
-pub fn activate(conn: &XConn, ws: &mut Workspace, screen: &Screen) {
+pub fn activate(conn: &XConn, ws: &mut Workspace, _screen: &Screen) {
     if ws.windows.is_empty() {
         return
     }
@@ -19,28 +19,56 @@ pub fn activate(conn: &XConn, ws: &mut Workspace, screen: &Screen) {
 }
 
 pub fn deactivate(conn: &XConn, ws: &mut Workspace) {
-    unimplemented!()
+    for window in ws.windows.iter() {
+        conn.change_window_attributes(window.id(), &values::disable_events());
+
+        conn.unmap_window(window.id());
+
+        conn.change_window_attributes(window.id(), &values::child_events());
+    }
 }
 
-pub fn add_window(conn: &XConn, ws: &mut Workspace, screen: &Screen, window: XWindowID) {
-    let mut window = Window::from(window);
+pub fn add_window(conn: &XConn, ws: &mut Workspace, _screen: &Screen, window_id: XWindowID) {
+    let mut window = Window::from(window_id);
 
     window.set_supported(conn);
 
     conn.map_window(window.id());
 
+    if let Some(focused) = ws.windows.focused() {
+        conn.configure_window(window_id, &values::stack_above_sibling(focused.id()));
+    }
 
+    window.xwindow.update_geometry_conn(conn);
+
+    conn.change_window_attributes(window.id(), &values::child_events());
+
+    ws.windows.push(window);
 }
 
+#[allow(mutable_borrow_reservation_conflict)]
+//* this ^^^ should be fixed
 pub fn del_window(
     conn: &XConn, 
     ws: &mut Workspace, 
-    screen: &Screen, 
-    window: XWindowID,
+    _screen: &Screen, 
+    window_id: XWindowID,
     idx: usize
 ) ->  Window {
-    unimplemented!()
+    let window = ws.windows.pop(idx);
 
+    conn.change_window_attributes(window_id, &values::disable_events());
+
+    conn.unmap_window(window_id);
+
+    if idx == 0 {
+        if let Some(next) = ws.windows.get(0) {
+            //todo: fix immutable borrow thing
+            window_stack_and_focus(ws, conn, next.id());
+        }
+    }
+
+    window
 }
 
 pub fn window_focus(conn: &XConn, ws: &mut Workspace, window: XWindowID) {
