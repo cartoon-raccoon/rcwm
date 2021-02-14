@@ -88,6 +88,8 @@ impl<'a> WM<'a> {
 
             unsafe {
                 match event.response_type() & !0x80 {
+                    xcb::CONFIGURE_NOTIFY => self.on_config_notify(xcb::cast_event(&event)),
+                    xcb::CONFIGURE_REQUEST => self.on_config_request(xcb::cast_event(&event)),
                     xcb::MAP_REQUEST => self.on_map_request(xcb::cast_event(&event)),
                     xcb::UNMAP_NOTIFY => self.on_unmap_notify(xcb::cast_event(&event)),
                     xcb::DESTROY_NOTIFY => self.on_destroy_notify(xcb::cast_event(&event)),
@@ -96,6 +98,47 @@ impl<'a> WM<'a> {
                     }
                 }
             }
+        }
+    }
+
+    pub fn on_config_notify(&mut self, event: &xcb::ConfigureNotifyEvent) {
+        if event.window() == self.screen.xwindow.id {
+            debug!("On configure notify for root window");
+
+            self.screen.xwindow.update_pos_x(event.x() as i32);
+            self.screen.xwindow.update_pos_y(event.y() as i32);
+            self.screen.xwindow.update_width(event.width() as i32);
+            self.screen.xwindow.update_height(event.height() as i32);
+
+            self.desktop.current_mut().deactivate(&self.conn);
+            self.desktop.current_mut().activate(&self.conn, &self.screen);
+        }
+    }
+
+    pub fn on_config_request(&mut self, event: &xcb::ConfigureRequestEvent) {
+        if let Some((ws, idx)) = self.desktop.contains_mut(event.window()) {
+            debug!("On configure request for window {}", event.window());
+
+            let ref mut window = ws[idx];
+
+            let mut values = Vec::new();
+
+            if xcb::CONFIG_WINDOW_Y as u16 & event.value_mask() != 0 {
+                values.push((xcb::CONFIG_WINDOW_Y as u16, event.x() as u32));
+            }
+            if xcb::CONFIG_WINDOW_X as u16 & event.value_mask() != 0 {
+                values.push((xcb::CONFIG_WINDOW_X as u16, event.x() as u32));
+            }
+            if xcb::CONFIG_WINDOW_WIDTH as u16 & event.value_mask() != 0 {
+                values.push((xcb::CONFIG_WINDOW_WIDTH as u16, event.width() as u32));
+                window.xwindow.update_width(event.width() as i32);
+            }
+            if xcb::CONFIG_WINDOW_HEIGHT as u16 & event.value_mask() != 0 {
+                values.push((xcb::CONFIG_WINDOW_HEIGHT as u16, event.height() as u32));
+                window.xwindow.update_height(event.height() as i32);
+            }
+
+            self.conn.configure_window(event.window(), &values);
         }
     }
 
