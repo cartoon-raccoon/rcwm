@@ -27,6 +27,16 @@ pub fn child_events() -> [(u32, u32); 1] {
     )];
 }
 
+pub fn configure_move(x: u32, y: u32) -> [(u16, u32); 2] {
+    debug!("VALUES: configure move");
+    return [(xcb::CONFIG_WINDOW_X as u16, x), (xcb::CONFIG_WINDOW_Y as u16, y)];
+}
+
+pub fn configure_resize(width: u32, height: u32) -> [(u16, u32); 2] {
+    debug!("VALUES: configure resize");
+    return [(xcb::CONFIG_WINDOW_WIDTH as u16, width), (xcb::CONFIG_WINDOW_HEIGHT as u16, height)];
+}
+
 pub fn stack_above_sibling(window_id: XWindowID) -> [(u16, u32); 2] {
     debug!("VALUES: configure stack above sibling {}", window_id);
     return [
