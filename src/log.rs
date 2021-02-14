@@ -23,6 +23,15 @@ macro_rules! info {
     };
 }
 
+macro_rules! warn {
+    ($fmt:expr) => {
+        (panic!(println!(concat!("[!] ", $fmt))));
+    };
+    ($fmt:expr, $($arg:tt)*) => {
+        (panic!(println!(concat!("[!] ", $fmt), $($arg)*)));
+    };
+}
+
 macro_rules! fatal {
     ($fmt:expr) => {
         (panic!(println!(concat!("[FATAL] ", $fmt))));
