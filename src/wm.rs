@@ -4,13 +4,16 @@ use xcb_util::{
 };
 
 use crate::values::ROOT_ATTRS;
-use crate::xserver::{XConn};
+use crate::xserver::{XConn, XWindowID};
 use crate::window::{Screen};
+use crate::desktop::Desktop;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 #[allow(dead_code)]
 pub struct WM<'a> {
     conn: XConn<'a>,
+    desktop: Desktop,
+    screen: Screen,
     root: i32,
 }
 
@@ -49,14 +52,28 @@ impl<'a> WM<'a> {
 
         screen.xwindow.update_geometry_conn(&xconn);
 
-        let new = Self {
+        let mut new = Self {
             conn: xconn,
+            desktop: Desktop::new(),
+            screen: Screen::new(screen_idx, root_id),
             root: screen_idx,
         };
 
-        // for existing in &new.conn.query_tree(root_id).unwrap() {
+        for &existing in &new.conn.query_tree(root_id).unwrap() {
+            let attr = if let Some(attr) = new.conn.get_window_attributes(existing) {
+                attr
+            } else {
+                continue
+            };
 
-        // }
+            if attr.override_redirect() || attr.map_state() as u32 != xcb::MAP_STATE_VIEWABLE {
+                continue
+            }
+
+            debug!("Mapping window {}", existing);
+
+            new.map_window(existing);
+        }
 
         new
 
@@ -72,6 +89,8 @@ impl<'a> WM<'a> {
             unsafe {
                 match event.response_type() & !0x80 {
                     xcb::MAP_REQUEST => self.on_map_request(xcb::cast_event(&event)),
+                    xcb::UNMAP_NOTIFY => self.on_unmap_notify(xcb::cast_event(&event)),
+                    xcb::DESTROY_NOTIFY => self.on_destroy_notify(xcb::cast_event(&event)),
                     unhandled => {
                         debug!("Unhandled event {}", unhandled);
                     }
@@ -81,10 +100,49 @@ impl<'a> WM<'a> {
     }
 
     pub fn on_map_request(&mut self, event: &xcb::MapRequestEvent) {
+        if self.desktop.contains(event.window()).is_none() {
+            debug!("On map request for window {}", event.window());
 
+            self.map_window(event.window());
+        } else {
+            debug!("Map request for existing window");
+        }
     }
 
-    fn map_window(&mut self) {
+    fn map_window(&mut self, window: XWindowID) {
+        if let Some(window_type) = self.conn.get_window_type(window) {
+            if !(window_type.contains(&self.conn.atoms.WM_WINDOW_TYPE_NORMAL)||
+                 window_type.contains(&self.conn.atoms.WM_WINDOW_TYPE_DIALOG)||
+                 window_type.contains(&self.conn.atoms.WM_WINDOW_TYPE_SPLASH)||
+                window_type.contains(&self.conn.atoms.WM_WINDOW_TYPE_UTILITY)||
+                window_type.contains(&self.conn.atoms.WM_WINDOW_TYPE_TOOLBAR)
+                ) {
+                debug!("Mapping but not tracking window {}", window);
 
+                self.conn.map_window(window);
+                return
+            }
+        }
+
+        self.desktop.current_mut().add_window(&self.conn, &self.screen, window);
+    }
+
+    pub fn on_unmap_notify(&mut self, event: &xcb::UnmapNotifyEvent) {
+        debug!("On unmap notify");
+        self.unmap_window(event.window());
+    }
+
+    pub fn on_destroy_notify(&mut self, event: &xcb::DestroyNotifyEvent) {
+        debug!("On destroy notify");
+        self.unmap_window(event.window());
+    }
+
+    fn unmap_window(&mut self, window: XWindowID) {
+        if let Some((ws, idx)) = self.desktop.contains_mut(window) {
+            debug!("Unmap notify for window {}", window);
+            ws.del_window(&self.conn, &self.screen, window, idx);
+        } else {
+            debug!("Unmap notify for untracked window {}", window)
+        }
     }
 }
