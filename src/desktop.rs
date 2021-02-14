@@ -1,6 +1,5 @@
 use crate::workspace::Workspace;
 use crate::xserver::XWindowID;
-use crate::window::Window;
 
 pub const MAX_WKSPACES: usize = 10;
 
@@ -35,10 +34,20 @@ impl Desktop {
         &mut self.workspaces[self.current]
     }
 
-    pub fn contains(&mut self, window: XWindowID) -> Option<&Window> {
+    pub fn contains(&mut self, window: XWindowID) -> Option<(&Workspace, usize)> {
         for ws in &self.workspaces {
             if let Some(idx) = ws.contains(window) {
-                return Some(&ws[idx])
+                return Some((ws, idx))
+            }
+        }
+
+        None
+    }
+
+    pub fn contains_mut(&mut self, window: XWindowID) -> Option<(&mut Workspace, usize)> {
+        for ws in &mut self.workspaces {
+            if let Some(idx) = ws.contains(window) {
+                return Some((ws, idx))
             }
         }
 
