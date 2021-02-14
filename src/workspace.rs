@@ -1,8 +1,11 @@
+use std::ops::{Index, IndexMut};
+
 use crate::window::{Window, Windows, Screen};
 use crate::xserver::{XConn, XWindowID};
 
 use crate::layout::*;
 
+#[derive(Clone)]
 pub struct Workspace {
     pub(crate) windows: Windows,
 
@@ -27,6 +30,7 @@ impl Default for Workspace {
     }
 }
 
+#[allow(dead_code)]
 impl Workspace {
     pub fn set_layout(&mut self, layout: LayoutType) {
         match layout {
@@ -61,5 +65,23 @@ impl Workspace {
         idx: usize
     ) -> Window {
         (self._del_window)(conn, self, screen, id, idx)
+    }
+
+    pub fn contains(&self, window: XWindowID) -> Option<usize> {
+        self.windows.contains(window)
+    }
+}
+
+impl Index<usize> for Workspace {
+    type Output = Window;
+
+    fn index(&self, idx: usize) -> &Window {
+        &self.windows[idx]
+    }
+}
+
+impl IndexMut<usize> for Workspace {
+    fn index_mut(&mut self, idx: usize) -> &mut Window {
+        &mut self.windows[idx]
     }
 }
