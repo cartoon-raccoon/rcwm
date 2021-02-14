@@ -1,8 +1,8 @@
+#![allow(dead_code)]
 use std::ops::{Index, IndexMut};
 use std::collections::{
     VecDeque, 
     HashSet, 
-    vec_deque::Iter
 };
 
 use crate::xserver::{
@@ -10,9 +10,11 @@ use crate::xserver::{
     XWindow, 
     XWindowID
 };
+use crate::values;
 
-pub const WIN_HEIGHT_MIN: i32 = 20;
-pub const WIN_WIDTH_MIN: i32 = 20;
+pub const WIN_HEIGHT_MIN: i32 = 100;
+pub const WIN_WIDTH_MIN: i32 = 100;
+pub const MIN_ONSCREEN: i32 = 20;
 
 fn ensure_in_bounds(val: &mut i32, min: i32, max: i32) {
     if *val < min {
@@ -41,6 +43,7 @@ impl From<(i32, i32, i32, i32)> for Geometry {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct Screen {
     pub xwindow: XWindow,
     pub idx: i32,
@@ -54,7 +57,7 @@ impl Screen {
         }
     }
 }
-
+#[derive(Clone)]
 pub struct Window {
     pub xwindow: XWindow,
     protocols: HashSet<xcb::Atom>,
@@ -80,8 +83,36 @@ impl Window {
         self.xwindow.id
     }
 
-    pub fn resize(&mut self, conn: &XConn, ) {
+    pub fn do_move(&mut self, conn: &XConn, scr: &Screen, dx: i32, dy: i32) {
+        self.xwindow.update_pos_y(dy);
+        self.xwindow.update_pos_x(dx);
 
+        let ref mut x = self.xwindow.geom.x;
+        let ref mut y = self.xwindow.geom.y;
+
+        let scrx = scr.xwindow.geom.x;
+        let scry = scr.xwindow.geom.y;
+
+        ensure_in_bounds(y, *y - scry + WIN_HEIGHT_MIN, *y + scry - WIN_HEIGHT_MIN);
+        ensure_in_bounds(x, *x - scrx + WIN_WIDTH_MIN, *x + scrx - WIN_WIDTH_MIN);
+
+        conn.configure_window(self.xwindow.id, &values::configure_move(*x as u32, *y as u32))
+    }
+
+    pub fn do_resize(&mut self, conn: &XConn, scr: &Screen, dx: i32, dy: i32) {
+        self.xwindow.update_height(dy);
+        self.xwindow.update_width(dx);
+
+        let ref mut h = self.xwindow.geom.height;
+        let ref mut w = self.xwindow.geom.width;
+
+        let scrh = scr.xwindow.geom.height;
+        let scrw = scr.xwindow.geom.width;
+
+        ensure_in_bounds(h, *h - scrh + MIN_ONSCREEN, *h + scrh - MIN_ONSCREEN);
+        ensure_in_bounds(w, *w - scrw + MIN_ONSCREEN, *w + scrw - MIN_ONSCREEN);
+
+        conn.configure_window(self.xwindow.id, &values::configure_resize(*h as u32, *w as u32))
     }
 
     pub fn set_supported(&mut self, conn: &XConn) {
@@ -91,9 +122,13 @@ impl Window {
             }
         }
     }
+
+    pub fn supports(&self, prtcl: xcb::Atom) -> bool {
+        self.protocols.contains(&prtcl)
+    }
 }
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Windows {
     windows: VecDeque<Window>,
 }
@@ -122,6 +157,14 @@ impl Windows {
         self.move_front(idx);
 
         self.windows.pop_front().unwrap()
+    }
+
+    pub fn get(&self, idx: usize) -> Option<&Window> {
+        self.windows.get(idx)
+    }
+
+    pub fn get_mut(&mut self, idx: usize) -> Option<&mut Window> {
+        self.windows.get_mut(idx)
     }
 
     pub fn remove(&mut self, idx: usize) -> Option<Window> {
