@@ -174,9 +174,29 @@ impl<'a> XConn<'a> {
         self.change_window_attributes(window, &values::cursor_attrs(self.cursor))
     }
 
+    pub fn get_window_attributes(&self, window: XWindowID) -> Option<xcb::GetWindowAttributesReply> {
+        debug!("Getting attributes for window {}", window);
+
+        xcb::get_window_attributes(self.conn, window).get_reply().ok()
+    }
+
+    pub fn get_window_type(&self, window: XWindowID) -> Option<Vec<xcb::Atom>> {
+        debug!("Getting type for window {}", window);
+
+        ewmh::get_wm_window_type(self.conn, window)
+        .get_reply().ok()
+        .map(|ok| ok.atoms().to_owned())
+    }
+
     pub fn change_window_attributes(&self, window: XWindowID, attrs: &[(u32, u32)]) {
         debug!("Changing attributes for window {}", window);
         xcb::change_window_attributes(self.conn, window, attrs);
+    }
+
+    pub fn change_window_attributes_checked(&self, window: XWindowID, attrs: &[(u32, u32)]) -> Result<()> {
+        debug!("Changing window attributes");
+        xcb::change_window_attributes_checked(self.conn, window, attrs).request_check()
+            .with_context(|| String::from("Could not change window attributes"))
     }
 
     pub fn configure_window(&self, window: XWindowID, attrs: &[(u16, u32)]) {
@@ -225,12 +245,6 @@ impl<'a> XConn<'a> {
                 None
             }
         }
-    }
-
-    pub fn change_window_attributes_checked(&self, window: XWindowID, attrs: &[(u32, u32)]) -> Result<()> {
-        debug!("Changing window attributes");
-        xcb::change_window_attributes_checked(self.conn, window, attrs).request_check()
-            .with_context(|| String::from("Could not change window attributes"))
     }
 
     pub fn set_supported(&self, screen_idx: i32, atoms: &[xcb::Atom]) {
