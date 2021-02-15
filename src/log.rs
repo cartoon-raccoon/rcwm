@@ -1,10 +1,10 @@
 #[cfg(debug_assertions)]
 macro_rules! debug {
     ($fmt:expr) => {
-        (println!(concat!("[DEBUG] ", $fmt)));
+        (println!(concat!("[debug] ", $fmt)));
     };
     ($fmt:expr, $($arg:tt)*) => {
-        (println!(concat!("[DEBUG] ", $fmt), $($arg)*));
+        (println!(concat!("[debug] ", $fmt), $($arg)*));
     };
 }
 
@@ -25,28 +25,28 @@ macro_rules! info {
 
 macro_rules! warn {
     ($fmt:expr) => {
-        (panic!(println!(concat!("[!] ", $fmt))));
+        (println!(concat!("[!] ", $fmt)));
     };
     ($fmt:expr, $($arg:tt)*) => {
-        (panic!(println!(concat!("[!] ", $fmt), $($arg)*)));
+        (println!(concat!("[!] ", $fmt), $($arg)*));
     };
 }
 
 macro_rules! fatal {
     ($fmt:expr) => {
-        (panic!(println!(concat!("[FATAL] ", $fmt))));
+        (panic!(concat!("[FATAL] ", $fmt)));
     };
     ($fmt:expr, $($arg:tt)*) => {
-        (panic!(println!(concat!("[FATAL] ", $fmt), $($arg)*)));
+        (panic!(concat!("[FATAL] ", $fmt), $($arg)*));
     };
 }
 
 macro_rules! error {
     ($fmt:expr) => {
-        (println!(concat!("[ERROR] ", $fmt)));
+        (eprintln!(concat!("[X] ", $fmt)));
     };
     ($fmt:expr, $($arg:tt)*) => {
-        (println!(concat!("[ERROR] ", $fmt), $($arg)*));
+        (eprintln!(concat!("[X] ", $fmt), $($arg)*));
     };
 }
 
