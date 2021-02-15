@@ -3,13 +3,12 @@ use xcb_util::{
     cursor,
 };
 
-use crate::values::ROOT_ATTRS;
+use crate::values;
 use crate::xserver::{XConn, XWindowID};
 use crate::window::{Screen};
 use crate::desktop::Desktop;
 use crate::layout::LayoutType;
 
-#[derive(Clone)]
 #[allow(dead_code)]
 pub struct WM<'a> {
     conn: XConn<'a>,
@@ -29,8 +28,10 @@ impl<'a> WM<'a> {
             .expect("Could not get root")
             .root();
 
+        debug!("Got root id of {}", root_id);
+
         // register for substructure redirect and substructure notify on root window 
-        xconn.change_window_attributes_checked(root_id, &ROOT_ATTRS)
+        xconn.change_window_attributes_checked(root_id, &values::ROOT_ATTRS)
             // we panic here because this is a fatal error
             .unwrap_or_else(|_e| {
                 error!("Another window manager is running.");
@@ -42,11 +43,16 @@ impl<'a> WM<'a> {
             xconn.atoms.WM_DELETE_WINDOW
         ]);
 
+        //todo: setup keybinds and register them to grab on root window
+
+        xconn.grab_button(root_id, values::ROOT_BUTTON_GRAB_MASK, xcb::BUTTON_INDEX_1, xcb::MOD_MASK_4, true);
+        xconn.grab_button(root_id, values::ROOT_BUTTON_GRAB_MASK, xcb::BUTTON_INDEX_3, xcb::MOD_MASK_4, true);
+
         // fatal because this is the WM setup process
         xconn.create_cursor(cursor::LEFT_PTR)
             .unwrap_or_else(|_e| {
                 fatal!("Could not create cursor")
-            });
+        });
 
         xconn.set_cursor(root_id);
 
@@ -56,7 +62,7 @@ impl<'a> WM<'a> {
 
         let mut new = Self {
             conn: xconn,
-            desktop: Desktop::new(),
+            desktop: Desktop::new(LayoutType::Floating),
             screen: Screen::new(screen_idx, root_id),
             root: screen_idx,
             layout: LayoutType::Floating,
@@ -86,6 +92,8 @@ impl<'a> WM<'a> {
     pub fn run(&mut self) -> ! {
         info!("Running WM");
 
+        self.desktop.current_mut().activate(&self.conn, &self.screen);
+
         loop {
             let event = self.conn.next_event();
 
@@ -96,6 +104,9 @@ impl<'a> WM<'a> {
                     xcb::MAP_REQUEST => self.on_map_request(xcb::cast_event(&event)),
                     xcb::UNMAP_NOTIFY => self.on_unmap_notify(xcb::cast_event(&event)),
                     xcb::DESTROY_NOTIFY => self.on_destroy_notify(xcb::cast_event(&event)),
+                    xcb::ENTER_NOTIFY => self.on_enter_notify(xcb::cast_event(&event)),
+                    xcb::BUTTON_PRESS => self.on_button_press(xcb::cast_event(&event)),
+                    xcb::BUTTON_RELEASE => self.on_button_release(xcb::cast_event(&event)),
                     unhandled => {
                         debug!("Unhandled event {}", unhandled);
                     }
@@ -128,9 +139,11 @@ impl<'a> WM<'a> {
 
             if xcb::CONFIG_WINDOW_Y as u16 & event.value_mask() != 0 {
                 values.push((xcb::CONFIG_WINDOW_Y as u16, event.x() as u32));
+                window.xwindow.update_pos_y(event.y() as i32);
             }
             if xcb::CONFIG_WINDOW_X as u16 & event.value_mask() != 0 {
                 values.push((xcb::CONFIG_WINDOW_X as u16, event.x() as u32));
+                window.xwindow.update_pos_x(event.x() as i32);
             }
             if xcb::CONFIG_WINDOW_WIDTH as u16 & event.value_mask() != 0 {
                 values.push((xcb::CONFIG_WINDOW_WIDTH as u16, event.width() as u32));
@@ -190,5 +203,17 @@ impl<'a> WM<'a> {
         } else {
             debug!("Unmap notify for untracked window {}", window)
         }
+    }
+
+    pub fn on_enter_notify(&mut self, event: &xcb::EnterNotifyEvent) {
+        debug!("On enter notify for {}", event.event());
+    }
+
+    pub fn on_button_press(&mut self, event: &xcb::ButtonPressEvent) {
+        debug!("Button press for {}", event.event());
+    }
+
+    pub fn on_button_release(&mut self, event: &xcb::ButtonReleaseEvent) {
+        debug!("Button release for {}", event.event());
     }
 }
