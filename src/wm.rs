@@ -206,7 +206,18 @@ impl<'a> WM<'a> {
     }
 
     pub fn on_enter_notify(&mut self, event: &xcb::EnterNotifyEvent) {
-        debug!("On enter notify for {}", event.event());
+        
+        if !(event.mode() as u32 == xcb::NOTIFY_MODE_NORMAL ||
+             event.mode() as u32 == xcb::NOTIFY_MODE_UNGRAB) {
+            return
+        }
+        
+        if self.desktop.current().contains(event.event()).is_some() {
+            debug!("On enter notify for {}", event.event());
+            self.conn.set_input_focus(event.event())
+        } else {
+            warn!("On enter notify for untracked window {}", event.event());
+        }
     }
 
     pub fn on_button_press(&mut self, event: &xcb::ButtonPressEvent) {
