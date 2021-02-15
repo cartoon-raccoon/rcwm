@@ -1,4 +1,5 @@
 use xcb_util::{ewmh, icccm, cursor};
+use xcb_util::keysyms::KeySymbols;
 use anyhow::{Context, Result};
 
 use std::ops::Index;
@@ -141,11 +142,11 @@ impl XWindow {
     }
 }
 
-#[derive(Clone, Copy)]
 pub struct XConn<'a> {
     pub conn: &'a ewmh::Connection,
     pub atoms: InternedAtoms,
     pub cursor: xcb::Cursor,
+    pub keysyms: KeySymbols<'a>,
 }
 
 #[allow(dead_code)]
@@ -155,6 +156,7 @@ impl<'a> XConn<'a> {
             conn: xconn,
             atoms: InternedAtoms::new(xconn),
             cursor: 0,
+            keysyms: KeySymbols::new(xconn),
         }
     }
 
@@ -267,13 +269,86 @@ impl<'a> XConn<'a> {
             ))
     }
 
+    pub fn grab_key(&self, window_id: XWindowID, mask: xcb::ModMask, keysym: xcb::Keysym) {
+        debug!("Grabbing key {} for window {}", keysym, window_id);
+
+        let code = self.keysyms.get_keycode(keysym).next();
+
+        if let Some(code) = code {
+            xcb::grab_key(
+                self.conn,
+                false,
+                window_id,
+                mask as u16,
+                code,
+                xcb::GRAB_MODE_ASYNC as u8,
+                xcb::GRAB_MODE_ASYNC as u8,
+            ).request_check().unwrap_or_else(|_e| {
+                warn!("Unable to grab key {}", keysym)
+            });
+        } else {
+            warn!("Returned null keycode for keysym {}, not grabbing", keysym)
+        }
+    }
+
+    pub fn grab_button(&self, 
+        window_id: XWindowID, 
+        mask: xcb::ButtonMask, 
+        button: xcb::ButtonIndex, 
+        modmask: xcb::ModMask, 
+        confine: bool) 
+    {
+        debug!("Grab button {} for window: {}", button, window_id);
+
+        xcb::grab_button(
+            self.conn, 
+            false, 
+            window_id, 
+            mask as u16, 
+            xcb::GRAB_MODE_ASYNC as u8,
+            xcb::GRAB_MODE_ASYNC as u8,
+            if confine { window_id } else { xcb::NONE },
+            xcb::NONE,
+            button as u8,
+            modmask as u16,
+        ).request_check().unwrap_or_else(|_e| {
+            warn!("Unable to grab button {}", button)
+        });
+    }
+
+    pub fn grab_pointer(&self, window_id: XWindowID, mask: xcb::EventMask) {
+        debug!("Grabbing pointer for window: {}", window_id);
+
+        xcb::grab_pointer(
+            self.conn,
+            false,
+            window_id,
+            mask as u16,
+            xcb::GRAB_MODE_ASYNC as u8,
+            xcb::GRAB_MODE_ASYNC as u8,
+            xcb::NONE,
+            xcb::NONE,
+            xcb::CURRENT_TIME,
+        );
+    }
+
+    pub fn query_pointer(&self, window_id: XWindowID) -> Result<xcb::QueryPointerReply> {
+        debug!("Querying pointer location for window {}", window_id);
+
+        xcb::query_pointer(self.conn, window_id).get_reply()
+        .with_context(|| String::from("Failed to query pointer"))
+    }
+
     pub fn next_event(&self) -> xcb::GenericEvent {
         self.conn.flush();
 
         if let Some(event) = self.conn.poll_for_queued_event() {
             event
         } else {
-            self.conn.wait_for_event().unwrap()
+            self.conn.wait_for_event().unwrap_or_else(|| {
+                error!("The X server closed the connection, exiting");
+                std::process::exit(10);
+            })
         }
     }
 }
