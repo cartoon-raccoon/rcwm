@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use xcb;
 
 use crate::xserver::XWindowID;
@@ -8,6 +9,12 @@ pub const ROOT_ATTRS: [(u32, u32); 1] = [
         xcb::EVENT_MASK_SUBSTRUCTURE_REDIRECT | xcb::EVENT_MASK_STRUCTURE_NOTIFY
     )
 ];
+
+// Root window mouse button event mask
+pub const ROOT_BUTTON_GRAB_MASK: xcb::ButtonMask = xcb::EVENT_MASK_BUTTON_PRESS|xcb::EVENT_MASK_BUTTON_RELEASE;
+
+// Root window pointer event mask
+pub const ROOT_POINTER_GRAB_MASK: xcb::EventMask = xcb::EVENT_MASK_BUTTON_RELEASE|xcb::EVENT_MASK_BUTTON_MOTION;
 
 pub fn cursor_attrs(cursor_id: u32) -> [(u32, u32); 1] {
     debug!("Getting cursor attrs for cursor {}", cursor_id);
