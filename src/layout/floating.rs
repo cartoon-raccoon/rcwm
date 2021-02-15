@@ -28,7 +28,7 @@ pub fn deactivate(conn: &XConn, ws: &mut Workspace) {
     }
 }
 
-pub fn add_window(conn: &XConn, ws: &mut Workspace, _screen: &Screen, window_id: XWindowID) {
+pub fn add_window(conn: &XConn, ws: &mut Workspace, screen: &Screen, window_id: XWindowID) {
     let mut window = Window::from(window_id);
 
     window.set_supported(conn);
@@ -40,6 +40,17 @@ pub fn add_window(conn: &XConn, ws: &mut Workspace, _screen: &Screen, window_id:
     }
 
     window.xwindow.update_geometry_conn(conn);
+
+    match conn.query_pointer(screen.xwindow.id) {
+        Ok(pointer) => {
+            if pointer.child() == screen.xwindow.id || pointer.child() == window_id {
+                conn.set_input_focus(window_id);
+            }
+        }
+        Err(e) => {
+            error!("{}", e)
+        }
+    }
 
     conn.change_window_attributes(window.id(), &values::child_events());
 
