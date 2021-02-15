@@ -32,6 +32,24 @@ impl Default for Workspace {
 
 #[allow(dead_code)]
 impl Workspace {
+    pub fn with_layout(layout: LayoutType) -> Self {
+        match layout {
+            LayoutType::Floating => Self {
+                windows: Windows::default(),
+    
+                _activate: floating::activate,
+                _deactivate: floating::deactivate,
+                _add_window: floating::add_window,
+                _del_window: floating::del_window,
+                _focus_window: floating::window_focus,
+            },
+            unhandled => {
+                error!("Layout type {:?} not supported", unhandled);
+                Self::default()
+            }
+        }
+    }
+
     pub fn set_layout(&mut self, layout: LayoutType) {
         match layout {
             LayoutType::Floating => {

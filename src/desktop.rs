@@ -1,5 +1,6 @@
 use crate::workspace::Workspace;
 use crate::xserver::XWindowID;
+use crate::layout::LayoutType;
 
 pub const MAX_WKSPACES: usize = 10;
 
@@ -11,13 +12,13 @@ pub struct Desktop {
 
 #[allow(dead_code)]
 impl Desktop {
-    pub fn new() -> Self {
+    pub fn new(layout: LayoutType) -> Self {
         Self {
             workspaces: {
                 let mut vec = Vec::with_capacity(MAX_WKSPACES);
 
                 for _ in 0..MAX_WKSPACES {
-                    vec.push(Workspace::default());
+                    vec.push(Workspace::with_layout(layout));
                 }
 
                 vec
