@@ -332,6 +332,12 @@ impl<'a> XConn<'a> {
         );
     }
 
+    pub fn ungrab_pointer(&self) {
+        debug!("Ungrabbing pointer");
+
+        xcb::ungrab_pointer(self.conn, xcb::CURRENT_TIME);
+    }
+
     pub fn query_pointer(&self, window_id: XWindowID) -> Result<xcb::QueryPointerReply> {
         debug!("Querying pointer location for window {}", window_id);
 

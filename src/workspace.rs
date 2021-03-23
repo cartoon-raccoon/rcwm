@@ -85,6 +85,12 @@ impl Workspace {
         (self._del_window)(conn, self, screen, id, idx)
     }
 
+    pub fn focus_window(&mut self, conn: &XConn, _screen: &Screen, id: XWindowID) {
+        debug!("Focusing window in workspace {}", id);
+
+        (self._focus_window)(conn, self, id);
+    }
+
     pub fn contains(&self, window: XWindowID) -> Option<usize> {
         self.windows.contains(window)
     }
