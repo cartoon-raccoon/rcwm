@@ -9,6 +9,13 @@ use crate::window::{Screen};
 use crate::desktop::Desktop;
 use crate::layout::LayoutType;
 
+/// Whether the mouse button is pressed.
+enum MouseMode {
+    None,
+    Move,
+    Resize,
+}
+
 #[allow(dead_code)]
 pub struct WM<'a> {
     conn: XConn<'a>,
@@ -16,6 +23,8 @@ pub struct WM<'a> {
     screen: Screen,
     root: i32,
     layout: LayoutType,
+    mousemode: MouseMode,
+    selected: Option<XWindowID>,
 }
 
 impl<'a> WM<'a> {
@@ -66,6 +75,8 @@ impl<'a> WM<'a> {
             screen: Screen::new(screen_idx, root_id),
             root: screen_idx,
             layout: LayoutType::Floating,
+            mousemode: MouseMode::None,
+            selected: None,
         };
 
         for &existing in &new.conn.query_tree(root_id).unwrap() {
@@ -105,6 +116,7 @@ impl<'a> WM<'a> {
                     xcb::UNMAP_NOTIFY => self.on_unmap_notify(xcb::cast_event(&event)),
                     xcb::DESTROY_NOTIFY => self.on_destroy_notify(xcb::cast_event(&event)),
                     xcb::ENTER_NOTIFY => self.on_enter_notify(xcb::cast_event(&event)),
+                    xcb::MOTION_NOTIFY => {},
                     xcb::BUTTON_PRESS => self.on_button_press(xcb::cast_event(&event)),
                     xcb::BUTTON_RELEASE => self.on_button_release(xcb::cast_event(&event)),
                     unhandled => {
@@ -222,9 +234,41 @@ impl<'a> WM<'a> {
 
     pub fn on_button_press(&mut self, event: &xcb::ButtonPressEvent) {
         debug!("Button press for {}", event.event());
+        if event.child() == xcb::NONE {
+            return
+        }
+
+        self.selected = Some(event.child());
+
+        self.conn.grab_pointer(self.screen.xwindow.id, values::ROOT_POINTER_GRAB_MASK);
+
+        if !self.desktop.current().windows.is_focused(event.child()) {
+            self.desktop.current_mut().focus_window(&self.conn, &self.screen, event.child());
+        }
+
+        match event.detail() as u32 {
+            xcb::BUTTON_INDEX_1 => {
+                self.mousemode = MouseMode::Move;
+            }
+            xcb::BUTTON_INDEX_2 => {
+                self.mousemode = MouseMode::Resize;
+            }
+            xcb::BUTTON_INDEX_3 => {
+                debug!("Middle mouse button selected")
+            }
+            _ => {
+                fatal!("Unhandled mouse button event")
+            }
+
+        }
     }
 
     pub fn on_button_release(&mut self, event: &xcb::ButtonReleaseEvent) {
         debug!("Button release for {}", event.event());
+
+        self.selected = None;
+        self.mousemode = MouseMode::None;
+
+        self.conn.ungrab_pointer();
     }
 }
