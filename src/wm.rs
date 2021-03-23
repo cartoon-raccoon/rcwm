@@ -25,6 +25,8 @@ pub struct WM<'a> {
     layout: LayoutType,
     mousemode: MouseMode,
     selected: Option<XWindowID>,
+    last_mouse_x: i32,
+    last_mouse_y: i32,
 }
 
 impl<'a> WM<'a> {
@@ -77,6 +79,8 @@ impl<'a> WM<'a> {
             layout: LayoutType::Floating,
             mousemode: MouseMode::None,
             selected: None,
+            last_mouse_x: 0,
+            last_mouse_y: 0,
         };
 
         for &existing in &new.conn.query_tree(root_id).unwrap() {
@@ -116,7 +120,7 @@ impl<'a> WM<'a> {
                     xcb::UNMAP_NOTIFY => self.on_unmap_notify(xcb::cast_event(&event)),
                     xcb::DESTROY_NOTIFY => self.on_destroy_notify(xcb::cast_event(&event)),
                     xcb::ENTER_NOTIFY => self.on_enter_notify(xcb::cast_event(&event)),
-                    xcb::MOTION_NOTIFY => {},
+                    xcb::MOTION_NOTIFY => self.on_motion_notify(xcb::cast_event(&event)),
                     xcb::BUTTON_PRESS => self.on_button_press(xcb::cast_event(&event)),
                     xcb::BUTTON_RELEASE => self.on_button_release(xcb::cast_event(&event)),
                     unhandled => {
@@ -242,6 +246,9 @@ impl<'a> WM<'a> {
 
         self.conn.grab_pointer(self.screen.xwindow.id, values::ROOT_POINTER_GRAB_MASK);
 
+        self.last_mouse_x = event.root_x() as i32;
+        self.last_mouse_y = event.root_y() as i32;
+
         if !self.desktop.current().windows.is_focused(event.child()) {
             self.desktop.current_mut().focus_window(&self.conn, &self.screen, event.child());
         }
@@ -270,5 +277,30 @@ impl<'a> WM<'a> {
         self.mousemode = MouseMode::None;
 
         self.conn.ungrab_pointer();
+    }
+
+    pub fn on_motion_notify(&mut self, event: &xcb::MotionNotifyEvent) {
+        if let Some(selected) = self.selected {
+            debug!("On motion notify");
+
+            let dx = event.root_x() as i32 - self.last_mouse_x;
+            let dy = event.root_y() as i32 - self.last_mouse_y;
+
+            if let Some(idx) = self.desktop.current().windows.contains(selected) {
+                let selected = self.desktop.current_mut().windows.get_mut(idx).unwrap();
+                match self.mousemode {
+                    MouseMode::None => {}
+                    MouseMode::Move => {
+                        selected.do_move(&self.conn, &self.screen, dx, dy);
+                    }
+                    MouseMode::Resize => {
+                        selected.do_resize(&self.conn, &self.screen, dx, dy);
+                    }
+                }
+            }
+
+        } else {
+            return
+        }
     }
 }

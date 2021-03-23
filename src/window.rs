@@ -78,6 +78,7 @@ impl From<XWindowID> for Window {
     }
 }
 
+//todo: fix your calculations, they are deeply broken.
 impl Window {
     pub fn id(&self) -> XWindowID {
         self.xwindow.id
