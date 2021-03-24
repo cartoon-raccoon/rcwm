@@ -84,36 +84,63 @@ impl Window {
         self.xwindow.id
     }
 
-    pub fn do_move(&mut self, conn: &XConn, scr: &Screen, dx: i32, dy: i32) {
+    pub fn x(&self) -> i32 {
+        self.xwindow.geom.x
+    }
+
+    pub fn y(&self) -> i32 {
+        self.xwindow.geom.y
+    }
+
+    pub fn height(&self) -> i32 {
+        self.xwindow.geom.height
+    }
+
+    pub fn width(&self) -> i32 {
+        self.xwindow.geom.width
+    }
+
+    pub fn do_move(&mut self, conn: &XConn, _scr: &Screen, dx: i32, dy: i32) {
         self.xwindow.update_pos_y(dy);
         self.xwindow.update_pos_x(dx);
 
-        let ref mut x = self.xwindow.geom.x;
-        let ref mut y = self.xwindow.geom.y;
+        // let scrx = scr.xwindow.geom.x;
+        // let scry = scr.xwindow.geom.y;
+        // let scrh = scr.xwindow.geom.height;
+        // let scrw = scr.xwindow.geom.width;
 
-        let scrx = scr.xwindow.geom.x;
-        let scry = scr.xwindow.geom.y;
+        // ensure_in_bounds(&mut self.xwindow.geom.x, 
+        //     scrx - self.xwindow.geom.width + MIN_ONSCREEN, 
+        //     scrx + scrw - MIN_ONSCREEN);
+        // ensure_in_bounds(&mut self.xwindow.geom.y, 
+        //     scry - self.xwindow.geom.height + MIN_ONSCREEN, 
+        //     scry + scrh - MIN_ONSCREEN);
 
-        ensure_in_bounds(y, *y - scry + WIN_HEIGHT_MIN, *y + scry - WIN_HEIGHT_MIN);
-        ensure_in_bounds(x, *x - scrx + WIN_WIDTH_MIN, *x + scrx - WIN_WIDTH_MIN);
-
-        conn.configure_window(self.xwindow.id, &values::configure_move(*x as u32, *y as u32))
+        conn.configure_window(self.xwindow.id, &values::configure_move(
+            self.xwindow.geom.x as u32, 
+            self.xwindow.geom.y as u32
+        ))
     }
 
-    pub fn do_resize(&mut self, conn: &XConn, scr: &Screen, dx: i32, dy: i32) {
+    pub fn do_resize(&mut self, conn: &XConn, _scr: &Screen, dx: i32, dy: i32) {
         self.xwindow.update_height(dy);
         self.xwindow.update_width(dx);
 
-        let ref mut h = self.xwindow.geom.height;
-        let ref mut w = self.xwindow.geom.width;
+        // let scrx = scr.xwindow.geom.x;
+        // let scry = scr.xwindow.geom.y;
+        // let scrh = scr.xwindow.geom.height;
+        // let scrw = scr.xwindow.geom.width;
 
-        let scrh = scr.xwindow.geom.height;
-        let scrw = scr.xwindow.geom.width;
+        // ensure_in_bounds(
+        //     &mut self.xwindow.geom.height, 
+        //     WIN_HEIGHT_MIN, scry + scrh - self.xwindow.geom.y);
+        // ensure_in_bounds(&mut self.xwindow.geom.width, 
+        //     WIN_WIDTH_MIN, scrx + scrw - self.xwindow.geom.x);
 
-        ensure_in_bounds(h, *h - scrh + MIN_ONSCREEN, *h + scrh - MIN_ONSCREEN);
-        ensure_in_bounds(w, *w - scrw + MIN_ONSCREEN, *w + scrw - MIN_ONSCREEN);
-
-        conn.configure_window(self.xwindow.id, &values::configure_resize(*h as u32, *w as u32))
+        conn.configure_window(self.xwindow.id, &values::configure_resize(
+            self.xwindow.geom.width as u32, 
+            self.xwindow.geom.height as u32
+        ))
     }
 
     pub fn set_supported(&mut self, conn: &XConn) {
