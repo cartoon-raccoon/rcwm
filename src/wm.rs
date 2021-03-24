@@ -257,10 +257,10 @@ impl<'a> WM<'a> {
             xcb::BUTTON_INDEX_1 => {
                 self.mousemode = MouseMode::Move;
             }
-            xcb::BUTTON_INDEX_2 => {
+            xcb::BUTTON_INDEX_3 => {
                 self.mousemode = MouseMode::Resize;
             }
-            xcb::BUTTON_INDEX_3 => {
+            xcb::BUTTON_INDEX_2 => {
                 debug!("Middle mouse button selected")
             }
             _ => {
@@ -286,10 +286,15 @@ impl<'a> WM<'a> {
             let dx = event.root_x() as i32 - self.last_mouse_x;
             let dy = event.root_y() as i32 - self.last_mouse_y;
 
+            self.last_mouse_x = event.root_x() as i32;
+            self.last_mouse_y = event.root_y() as i32;
+
             if let Some(idx) = self.desktop.current().windows.contains(selected) {
                 let selected = self.desktop.current_mut().windows.get_mut(idx).unwrap();
                 match self.mousemode {
-                    MouseMode::None => {}
+                    MouseMode::None => {
+                        error!("Encountered no button press while grabbing mouse")
+                    }
                     MouseMode::Move => {
                         selected.do_move(&self.conn, &self.screen, dx, dy);
                     }
