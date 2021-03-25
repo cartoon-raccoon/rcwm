@@ -87,6 +87,9 @@ pub fn window_focus(conn: &XConn, ws: &mut Workspace, window: XWindowID) {
     if let Some(idx) = ws.windows.contains(window) {
         // internally focus
         ws.windows.move_front(idx);
+        
+        debug!("Moving window {} to the front",  window);
+        debug!("{}", ws.windows[0].id());
 
         // tell x to focus
         window_stack_and_focus(ws, conn, window)
