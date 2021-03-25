@@ -86,4 +86,11 @@ impl Desktop {
             error!("No workspace found for index {}", idx);
         }
     }
+
+    pub fn send_window_to(&mut self, conn: &XConn, scr: &Screen, idx: usize) {
+        if let Some(window) = self.current_mut().take_focused_window(conn, scr) {
+            debug!("Sending window {} to workspace {}", window.id(), idx);
+            self.workspaces[idx].windows.push(window);
+        }
+    }
 }

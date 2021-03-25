@@ -85,6 +85,20 @@ impl Workspace {
         (self._del_window)(conn, self, screen, id, idx)
     }
 
+    pub fn take_focused_window(&mut self,
+        conn: &XConn,
+        screen: &Screen,
+    ) -> Option<Window> {
+        if let Some(window) = self.windows.focused() {
+            let window = window.to_owned();
+            self.del_window(conn, screen, window.id(), 0);
+
+            Some(window)
+        } else {
+            None
+        }
+    }
+
     pub fn focus_window(&mut self, conn: &XConn, _screen: &Screen, id: XWindowID) {
         debug!("Focusing window in workspace {}", id);
 
