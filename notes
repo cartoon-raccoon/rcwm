@@ -1,0 +1,10 @@
+todo: 
+    implement tiling algorithm(s)
+    draw borders (reparenting)
+    implement config file reading
+
+design goals:
+    builtin bar + support for other bars
+    ipc via separate client program
+    builin scripting language
+    config file in toml? lua? builtin scripting language?
