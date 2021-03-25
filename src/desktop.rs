@@ -1,6 +1,8 @@
 use crate::workspace::Workspace;
 use crate::xserver::XWindowID;
 use crate::layout::LayoutType;
+use crate::xserver::XConn;
+use crate::window::Screen;
 
 pub const MAX_WKSPACES: usize = 10;
 
@@ -53,5 +55,35 @@ impl Desktop {
         }
 
         None
+    }
+
+    pub fn get(&self, idx: usize) -> Option<&Workspace> {
+        if idx + 1 >= self.workspaces.len() {
+            return None
+        }
+
+        Some(&self.workspaces[idx])
+    }
+
+    pub fn get_mut(&mut self, idx: usize) -> Option<&mut Workspace> {
+        if idx + 1 >= self.workspaces.len() {
+            return None
+        }
+
+        Some(&mut self.workspaces[idx])
+    }
+
+    pub fn goto(&mut self, conn: &XConn, scr: &Screen, idx: usize) {
+        debug!("Goto desktop {}", idx);
+
+        self.workspaces.get_mut(self.current).unwrap().deactivate(conn);
+        
+        self.current = idx;
+
+        if let Some(ws) = self.get_mut(self.current) {
+            ws.activate(conn, scr);
+        } else {
+            error!("No workspace found for index {}", idx);
+        }
     }
 }
