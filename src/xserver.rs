@@ -269,6 +269,12 @@ impl<'a> XConn<'a> {
             ))
     }
 
+    pub fn lookup_keysym(&self, event:&xcb::KeyPressEvent) -> (xcb::ModMask, xcb::Keysym) {
+        let keysym = self.keysyms.press_lookup_keysym(event, 0);
+
+        (event.state() as u32, keysym)
+    }
+
     pub fn grab_key(&self, window_id: XWindowID, mask: xcb::ModMask, keysym: xcb::Keysym) {
         debug!("Grabbing key {} for window {}", keysym, window_id);
 
