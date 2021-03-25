@@ -19,8 +19,8 @@ enum MouseMode {
 
 #[allow(dead_code)]
 pub struct WM<'a> {
-    conn: XConn<'a>,
-    desktop: Desktop,
+    pub conn: XConn<'a>,
+    pub desktop: Desktop,
     screen: Screen,
     root: i32,
     layout: LayoutType,
@@ -28,6 +28,7 @@ pub struct WM<'a> {
     selected: Option<XWindowID>,
     last_mouse_x: i32,
     last_mouse_y: i32,
+    to_quit: bool,
 }
 
 impl<'a> WM<'a> {
@@ -84,8 +85,10 @@ impl<'a> WM<'a> {
             selected: None,
             last_mouse_x: 0,
             last_mouse_y: 0,
+            to_quit: false,
         };
 
+        // find existing windows and map them
         for &existing in &new.conn.query_tree(root_id).unwrap() {
             let attr = if let Some(attr) = new.conn.get_window_attributes(existing) {
                 attr
@@ -107,7 +110,7 @@ impl<'a> WM<'a> {
     }
 
     //using a mutable reference statically ensures there is only one instance running
-    pub fn run(&mut self) -> ! {
+    pub fn run(&mut self) {
         info!("Running WM");
 
         self.desktop.current_mut().activate(&self.conn, &self.screen);
@@ -132,11 +135,20 @@ impl<'a> WM<'a> {
                     }
                 }
             }
+
+            if self.to_quit {
+                info!("Quitting!");
+                break;
+            }
         }
     }
 
     pub fn goto_workspace(&mut self, idx: usize) {
         self.desktop.goto(&self.conn, &self.screen, idx);
+    }
+
+    pub fn send_window_to(&mut self, idx: usize) {
+        self.desktop.send_window_to(&self.conn, &self.screen, idx);
     }
 
     pub fn on_config_notify(&mut self, event: &xcb::ConfigureNotifyEvent) {
@@ -238,7 +250,7 @@ impl<'a> WM<'a> {
         
         if self.desktop.current().contains(event.event()).is_some() {
             debug!("On enter notify for {}", event.event());
-            self.conn.set_input_focus(event.event())
+            self.desktop.current_mut().focus_window(&self.conn, &self.screen, event.event())
         } else {
             warn!("On enter notify for untracked window {}", event.event());
         }
@@ -329,5 +341,13 @@ impl<'a> WM<'a> {
         } else {
             return
         }
+    }
+
+    pub fn quit(&mut self) {
+
+        // we use a field to mark a flag for quitting
+        // so that instead of exiting on the spot, we can instead
+        // break the loop and thereby run cleanup code if we need to
+        self.to_quit = true;
     }
 }
