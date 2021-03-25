@@ -8,6 +8,7 @@ mod values;
 mod desktop;
 mod workspace;
 mod layout;
+mod keys;
 
 use wm::WM;
 
