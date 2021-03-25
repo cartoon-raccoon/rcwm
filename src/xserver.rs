@@ -4,7 +4,7 @@ use anyhow::{Context, Result};
 
 use std::ops::Index;
 
-use crate::window::Geometry;
+use crate::window::{Geometry, Window};
 use crate::values;
 
 // #[derive(Clone, Copy, Debug)]
@@ -227,6 +227,33 @@ impl<'a> XConn<'a> {
         let cookie = xcb::unmap_window(self.conn, window_id);
         if let Err(e) = cookie.request_check() {
             error!("Could not unmap window {}: {}", window_id, e)
+        }
+    }
+
+    pub fn destroy_window(&self, window: &Window) {
+        debug!("Destroying window {}", window.id());
+        if window.supports(self.atoms.WM_DELETE_WINDOW) {
+            debug!("Destroying window via ICCCM WM_DELETE_WINDOW");
+
+            let msg_data = xcb::ClientMessageData::from_data32([
+                self.atoms.WM_DELETE_WINDOW,
+                xcb::CURRENT_TIME,
+                0, 0, 0 
+            ]);
+
+            let msg_event = xcb::ClientMessageEvent::new(32, window.id(), self.atoms.WM_PROTOCOLS, msg_data);
+
+            xcb::send_event(
+                self.conn,
+                false,
+                window.id(),
+                xcb::EVENT_MASK_NO_EVENT,
+                &msg_event
+            );
+        } else {
+            debug!("Destroying window via xcb::destroy_window");
+
+            xcb::destroy_window(&self.conn, window.id());
         }
     }
 
