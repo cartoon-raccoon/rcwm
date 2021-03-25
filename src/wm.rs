@@ -8,6 +8,7 @@ use crate::xserver::{XConn, XWindowID};
 use crate::window::{Screen};
 use crate::desktop::Desktop;
 use crate::layout::LayoutType;
+use crate::keys;
 
 /// Whether the mouse button is pressed.
 enum MouseMode {
@@ -54,10 +55,12 @@ impl<'a> WM<'a> {
             xconn.atoms.WM_DELETE_WINDOW
         ]);
 
-        //todo: setup keybinds and register them to grab on root window
-
         xconn.grab_button(root_id, values::ROOT_BUTTON_GRAB_MASK, xcb::BUTTON_INDEX_1, xcb::MOD_MASK_4, true);
         xconn.grab_button(root_id, values::ROOT_BUTTON_GRAB_MASK, xcb::BUTTON_INDEX_3, xcb::MOD_MASK_4, true);
+
+        for (mask, ks, _) in keys::KEYBINDS {
+            xconn.grab_key(root_id, *mask, *ks);
+        }
 
         // fatal because this is the WM setup process
         xconn.create_cursor(cursor::LEFT_PTR)
@@ -121,6 +124,7 @@ impl<'a> WM<'a> {
                     xcb::DESTROY_NOTIFY => self.on_destroy_notify(xcb::cast_event(&event)),
                     xcb::ENTER_NOTIFY => self.on_enter_notify(xcb::cast_event(&event)),
                     xcb::MOTION_NOTIFY => self.on_motion_notify(xcb::cast_event(&event)),
+                    xcb::KEY_PRESS => self.on_key_press(xcb::cast_event(&event)),
                     xcb::BUTTON_PRESS => self.on_button_press(xcb::cast_event(&event)),
                     xcb::BUTTON_RELEASE => self.on_button_release(xcb::cast_event(&event)),
                     unhandled => {
@@ -129,6 +133,10 @@ impl<'a> WM<'a> {
                 }
             }
         }
+    }
+
+    pub fn goto_workspace(&mut self, idx: usize) {
+        self.desktop.goto(&self.conn, &self.screen, idx);
     }
 
     pub fn on_config_notify(&mut self, event: &xcb::ConfigureNotifyEvent) {
@@ -236,8 +244,22 @@ impl<'a> WM<'a> {
         }
     }
 
+    pub fn on_key_press(&mut self, event: &xcb::KeyPressEvent) {
+        debug!("Button press for window {}", event.event());
+
+        let (modm, keysym) = self.conn.lookup_keysym(event);
+
+        if let Some((_, _, cb)) = keys::find_keybind(modm, keysym) {
+            debug!("Found keybind");
+            cb(self);
+            return
+        }
+
+        debug!("No keybind found for key press event")
+    }
+
     pub fn on_button_press(&mut self, event: &xcb::ButtonPressEvent) {
-        debug!("Button press for {}", event.event());
+        debug!("Button press for window {}", event.event());
         if event.child() == xcb::NONE {
             return
         }
