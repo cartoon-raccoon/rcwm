@@ -3,6 +3,8 @@ use crate::workspace::Workspace;
 use crate::window::{Window, Screen};
 use crate::values;
 
+use super::{set_focus_colour, set_unfocus_colour};
+
 pub fn activate(conn: &XConn, ws: &mut Workspace, _screen: &Screen) {
     if ws.windows.is_empty() {
         return
@@ -105,14 +107,6 @@ pub fn window_focus(conn: &XConn, ws: &mut Workspace, window: XWindowID) {
         // tell x to focus
         window_stack_and_focus(ws, conn, window)
     }
-}
-
-fn set_focus_colour(conn: &XConn, window: XWindowID) {
-    conn.change_window_attributes(window, &[(xcb::CW_BORDER_PIXEL, 0xff0000)]);
-}
-
-fn set_unfocus_colour(conn: &XConn, window: XWindowID) {
-    conn.change_window_attributes(window, &[(xcb::CW_BORDER_PIXEL, 0xdddddd)]);
 }
 
 fn window_stack_and_focus(ws: &mut Workspace, conn: &XConn, window: XWindowID) {
