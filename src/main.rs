@@ -15,14 +15,16 @@ use wm::WM;
 use xcb::base::Connection;
 use xcb_util::ewmh;
 
-/*
- * Step 1: Get root window ID
- * Step 2: Register substructure redirection on root window
- * Step 3: Register atoms
- * Step 4: Register whatever mouse events
-*/
+use nix::sys::signal::{
+    signal, Signal, SigHandler
+};
 
-fn main() {
+fn main() -> anyhow::Result<()> {
+    unsafe {
+        signal(Signal::SIGINT, SigHandler::SigIgn)?;
+        signal(Signal::SIGQUIT, SigHandler::SigIgn)?;
+    }
+
     let (conn, screen_idx) = Connection::connect(None)
         .expect("Failed to connect to X server");
     
@@ -32,5 +34,7 @@ fn main() {
 
     let mut wm = WM::register(&conn, screen_idx);
 
-    wm.run()
+    wm.run();
+
+    Ok(())
 }
