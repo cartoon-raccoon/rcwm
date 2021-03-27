@@ -164,6 +164,20 @@ impl<'a> XConn<'a> {
         self.conn.get_setup()
     }
 
+    pub fn get_root_id(&self, idx: i32) -> XWindowID {
+        self.conn.get_setup()
+            .roots()
+            .nth(idx as usize)
+            .expect("Could not get root id")
+            .root()
+    }
+
+    pub fn query_tree(&self, window: XWindowID) -> Result<Vec<XWindowID>> {
+        xcb::query_tree(self.conn, window).get_reply()
+            .map(|ok| ok.children().to_owned())
+            .map_err(|err| anyhow::Error::new(err))
+    }
+
     pub fn create_cursor(&mut self, glyph: u16) -> Result<()> {
         debug!("Creating cursor");
         let cursor_id = cursor::create_font_cursor_checked(self.conn, glyph)?;
@@ -206,11 +220,25 @@ impl<'a> XConn<'a> {
         xcb::configure_window(self.conn, window, attrs);
     }
 
-    pub fn query_tree(&self, window: XWindowID) -> Result<Vec<XWindowID>> {
-        xcb::query_tree(self.conn, window).get_reply()
-            .map(|ok| ok.children().to_owned())
-            .map_err(|err| anyhow::Error::new(err))
+    pub fn reparent_window(&self, window: XWindowID, parent: XWindowID) {
+        debug!("Reparenting window {} under window {}", window, parent);
+        xcb::reparent_window(&self.conn, window, parent, 0, 0);
     }
+
+    // pub fn create_window(&self, parent: XWindowID, geom: Geometry, border_width,) -> XWindowID {
+    //     let win_id = self.conn.generate_id();
+
+    //     let cookie = xcb::create_window(
+    //         &self.conn,
+    //         xcb::COPY_FROM_PARENT,
+    //         win_id,
+    //         parent,
+    //         geom.x,
+    //         geom.y,
+    //         geom.height,
+    //         geom.width,
+    //     );
+    // }
 
     pub fn map_window(&self, window_id: XWindowID) {
         debug!("Mapping window {}", window_id);
