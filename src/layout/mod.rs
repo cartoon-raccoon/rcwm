@@ -5,8 +5,12 @@ use crate::xserver::{XConn, XWindowID};
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum LayoutType {
+    /// All-floating layout.
     Floating,
-    Tiled,
+    /// Dynamic tiled, XMonad style.
+    DTiled,
+    /// Manual tiled, i3 style.
+    MTiled,
 }
 
 fn set_focus_colour(conn: &XConn, window: XWindowID) {
