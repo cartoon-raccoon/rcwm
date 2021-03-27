@@ -11,4 +11,6 @@ xcb = "0.9.0"
 xcb-util = { version = "0.3", features = ["keysyms", "cursor", "ewmh", "icccm"]}
 x11 = "2.18"
 
+nix = "0.20"
+
 anyhow = "1"
