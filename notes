@@ -1,10 +1,12 @@
 todo: 
     implement tiling algorithm(s)
-    draw borders (reparenting)
-    implement config file reading
+    implement config file reading and integrate
+    add ewmh and icccm support
 
 design goals:
+    full ewmh + icccm support
     builtin bar + support for other bars
     ipc via separate client program
     builin scripting language
     config file in toml? lua? builtin scripting language?
+    reparenting?
