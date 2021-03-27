@@ -8,6 +8,8 @@ use crate::layout::*;
 #[derive(Clone)]
 pub struct Workspace {
     pub(crate) windows: Windows,
+    pub(crate) master: Option<XWindowID>,
+    pub(crate) layout: LayoutType,
 
     pub _activate: fn(&XConn, &mut Workspace, &Screen),
     pub _deactivate: fn(&XConn, &mut Workspace),
@@ -20,6 +22,8 @@ impl Default for Workspace {
     fn default() -> Self {
         Self {
             windows: Windows::default(),
+            master: None,
+            layout: LayoutType::DTiled,
 
             _activate: floating::activate,
             _deactivate: floating::deactivate,
@@ -36,6 +40,8 @@ impl Workspace {
         match layout {
             LayoutType::Floating => Self {
                 windows: Windows::default(),
+                master: None,
+                layout: layout,
     
                 _activate: floating::activate,
                 _deactivate: floating::deactivate,
@@ -53,6 +59,7 @@ impl Workspace {
     pub fn set_layout(&mut self, layout: LayoutType) {
         match layout {
             LayoutType::Floating => {
+                self.layout = layout;
                 self._activate = floating::activate;
                 self._deactivate = floating::deactivate;
                 self._add_window = floating::add_window;
@@ -64,6 +71,11 @@ impl Workspace {
             }
         }
     }
+
+    pub fn set_master(&mut self, master_id: XWindowID) {
+        self.master = Some(master_id);
+    }
+
     pub fn activate(&mut self, conn: &XConn, screen: &Screen) {
         (self._activate)(conn, self, screen);
     }

@@ -200,14 +200,11 @@ impl Windows {
     }
 
     pub fn contains(&self, id: XWindowID) -> Option<usize> {
-        let mut idx: usize = 0;
 
-        for window in &self.windows {
+        for (idx, window) in self.windows.iter().enumerate() {
             if window.id() == id {
                 return Some(idx)
             }
-
-            idx +=  1;
         }
 
         None
