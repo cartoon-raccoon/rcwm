@@ -11,6 +11,7 @@ use crate::xserver::{
     XWindowID
 };
 use crate::values;
+use crate::layout::LayoutType;
 
 pub const WIN_HEIGHT_MIN: i32 = 100;
 pub const WIN_WIDTH_MIN: i32 = 100;
@@ -57,9 +58,29 @@ impl Screen {
         }
     }
 }
+
+#[derive(Clone, Copy, Debug)]
+pub enum WindowState {
+    Tiled,
+    Floating,
+}
+
+impl From<LayoutType> for WindowState {
+
+    #[inline]
+    fn from(from: LayoutType) -> WindowState {
+        if let LayoutType::Floating = from {
+            return Self::Floating
+        }
+
+        Self::Tiled
+    }
+}
+
 #[derive(Clone)]
 pub struct Window {
     pub xwindow: XWindow,
+    pub state: WindowState,
     protocols: HashSet<xcb::Atom>,
 }
 
@@ -73,6 +94,7 @@ impl From<XWindowID> for Window {
     fn from(from: XWindowID) -> Self {
         Self {
             xwindow: XWindow::from(from),
+            state: WindowState::Floating,
             protocols: HashSet::new(),
         }
     }
@@ -80,22 +102,43 @@ impl From<XWindowID> for Window {
 
 //todo: fix your calculations, they are deeply broken.
 impl Window {
+    pub fn tiled(from: XWindowID) -> Self {
+        Self {
+            xwindow: XWindow::from(from),
+            state: WindowState::Tiled,
+            protocols: HashSet::new(),
+        }
+    }
+
+    pub fn floating(from: XWindowID) -> Self {
+        Self {
+            xwindow: XWindow::from(from),
+            state: WindowState::Floating,
+            protocols: HashSet::new(),
+        }
+    }
+
+    #[inline(always)]
     pub fn id(&self) -> XWindowID {
         self.xwindow.id
     }
 
+    #[inline(always)]
     pub fn x(&self) -> i32 {
         self.xwindow.geom.x
     }
 
+    #[inline(always)]
     pub fn y(&self) -> i32 {
         self.xwindow.geom.y
     }
 
+    #[inline(always)]
     pub fn height(&self) -> i32 {
         self.xwindow.geom.height
     }
 
+    #[inline(always)]
     pub fn width(&self) -> i32 {
         self.xwindow.geom.width
     }
@@ -117,9 +160,14 @@ impl Window {
         //     scry + scrh - MIN_ONSCREEN);
 
         conn.configure_window(self.xwindow.id, &values::configure_move(
-            self.xwindow.geom.x as u32, 
-            self.xwindow.geom.y as u32
-        ))
+            self.x() as u32, 
+            self.y() as u32
+        ));
+
+        debug!(
+            "Updated geometry:\nx: {}, y: {}, h: {}, w: {}", 
+            self.x(), self.y(), self.height(), self.width()
+        );
     }
 
     pub fn do_resize(&mut self, conn: &XConn, _scr: &Screen, dx: i32, dy: i32) {
@@ -138,8 +186,28 @@ impl Window {
         //     WIN_WIDTH_MIN, scrx + scrw - self.xwindow.geom.x);
 
         conn.configure_window(self.xwindow.id, &values::configure_resize(
-            self.xwindow.geom.width as u32, 
-            self.xwindow.geom.height as u32
+            self.width() as u32, 
+            self.height() as u32
+        ));
+
+        debug!(
+            "Updated geometry:\nx: {}, y: {}, h: {}, w: {}", 
+            self.x(), self.y(), self.height(), self.width()
+        );
+    }
+
+    // Updates and sets the window geometry with a given Geometry.
+    pub fn update_geometry(&mut self, conn: &XConn, geom: Geometry) {
+        self.xwindow.set_geometry(geom);
+
+        conn.configure_window(self.xwindow.id, &values::configure_resize(
+            self.width() as u32,
+            self.height() as u32,
+        ));
+
+        conn.configure_window(self.xwindow.id, &values::configure_move(
+            self.x() as u32,
+            self.y() as u32,
         ))
     }
 
@@ -229,6 +297,22 @@ impl Windows {
             false
         }
     }
+
+    pub fn lookup(&self, id: XWindowID) -> Option<&Window> {
+        if let Some(idx) = self.contains(id) {
+            return self.get(idx)
+        }
+
+        None
+    }
+
+    pub fn lookup_mut(&mut self, id: XWindowID) -> Option<&mut Window> {
+        if let Some(idx) = self.contains(id) {
+            return self.get_mut(idx)
+        }
+
+        None
+    }
 }
 
 impl Index<usize> for Windows {
@@ -243,4 +327,4 @@ impl IndexMut<usize> for Windows {
     fn index_mut(&mut self, idx: usize) -> &mut Window {
         &mut self.windows[idx]
     }
-}
+} 
