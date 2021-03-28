@@ -1,4 +1,5 @@
 todo: 
+    add sighandlers
     implement tiling algorithm(s)
     implement config file reading and integrate
     add ewmh and icccm support
@@ -10,3 +11,9 @@ design goals:
     builin scripting language
     config file in toml? lua? builtin scripting language?
     reparenting?
+
+conventions and rules
+- pass windows around by their id
+use the id to lookup windows, and instead pass references
+to their storage structures
+(allows you to mutably borrow windows within a single scope)
