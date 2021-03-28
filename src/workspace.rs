@@ -3,7 +3,7 @@ use std::ops::{Index, IndexMut};
 use crate::window::{Window, Windows, Screen};
 use crate::xserver::{XConn, XWindowID};
 
-use crate::layout::*;
+use crate::layout::{self, *};
 
 #[derive(Clone)]
 pub struct Workspace {
@@ -25,8 +25,8 @@ impl Default for Workspace {
             master: None,
             layout: LayoutType::DTiled,
 
-            _activate: floating::activate,
-            _deactivate: floating::deactivate,
+            _activate: layout::activate,
+            _deactivate: layout::deactivate,
             _add_window: floating::add_window,
             _del_window: floating::del_window,
             _focus_window: floating::window_focus,
@@ -43,8 +43,8 @@ impl Workspace {
                 master: None,
                 layout: layout,
     
-                _activate: floating::activate,
-                _deactivate: floating::deactivate,
+                _activate: layout::activate,
+                _deactivate: layout::deactivate,
                 _add_window: floating::add_window,
                 _del_window: floating::del_window,
                 _focus_window: floating::window_focus,
@@ -60,8 +60,8 @@ impl Workspace {
         match layout {
             LayoutType::Floating => {
                 self.layout = layout;
-                self._activate = floating::activate;
-                self._deactivate = floating::deactivate;
+                self._activate = layout::activate;
+                self._deactivate = layout::deactivate;
                 self._add_window = floating::add_window;
                 self._del_window = floating::del_window;
                 self._focus_window = floating::window_focus;
@@ -74,6 +74,24 @@ impl Workspace {
 
     pub fn set_master(&mut self, master_id: XWindowID) {
         self.master = Some(master_id);
+    }
+
+    #[inline]
+    pub fn is_master(&self, win_id: XWindowID) -> bool {
+        if let Some(win) = self.master {
+            return win == win_id
+        }
+        false
+    }
+
+    #[inline(always)]
+    pub fn master(&self) -> Option<XWindowID> {
+        self.master
+    }
+
+    #[inline(always)]
+    pub fn is_empty(&self) -> bool {
+        self.windows.len() == 0
     }
 
     pub fn activate(&mut self, conn: &XConn, screen: &Screen) {
