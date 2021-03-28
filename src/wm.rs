@@ -33,13 +33,9 @@ pub struct WM<'a> {
 
 impl<'a> WM<'a> {
     pub fn register(conn: &'a Connection, screen_idx: i32) -> Self {
-        let mut xconn = XConn::new(conn);
+        let mut xconn = XConn::new(conn, screen_idx);
 
-        let root_id = xconn.get_setup()
-            .roots()
-            .nth(screen_idx as usize)
-            .expect("Could not get root")
-            .root();
+        let root_id = xconn.get_root_id();
 
         debug!("Got root id of {}", root_id);
 
@@ -73,7 +69,7 @@ impl<'a> WM<'a> {
 
         let mut screen = Screen::new(screen_idx, root_id);
 
-        screen.xwindow.update_geometry_conn(&xconn);
+        screen.xwindow.set_geometry_conn(&xconn);
 
         let mut new = Self {
             conn: xconn,
@@ -127,6 +123,7 @@ impl<'a> WM<'a> {
                     xcb::DESTROY_NOTIFY => self.on_destroy_notify(xcb::cast_event(&event)),
                     xcb::ENTER_NOTIFY => self.on_enter_notify(xcb::cast_event(&event)),
                     xcb::MOTION_NOTIFY => self.on_motion_notify(xcb::cast_event(&event)),
+                    xcb::REPARENT_NOTIFY => {debug!("Reparent notify")}
                     xcb::KEY_PRESS => self.on_key_press(xcb::cast_event(&event)),
                     xcb::BUTTON_PRESS => self.on_button_press(xcb::cast_event(&event)),
                     xcb::BUTTON_RELEASE => self.on_button_release(xcb::cast_event(&event)),

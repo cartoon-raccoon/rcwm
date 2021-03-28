@@ -5,31 +5,6 @@ use crate::values;
 
 use super::{set_focus_colour, set_unfocus_colour};
 
-pub fn activate(conn: &XConn, ws: &mut Workspace, _screen: &Screen) {
-    if ws.windows.is_empty() {
-        return
-    }
-
-    for window in ws.windows.iter_rev() {
-        // disable events
-        conn.change_window_attributes(window.id(), &values::disable_events());
-        // map window
-        conn.map_window(window.id());
-        // re-enable events
-        conn.change_window_attributes(window.id(), &values::child_events());
-    }
-}
-
-pub fn deactivate(conn: &XConn, ws: &mut Workspace) {
-    for window in ws.windows.iter() {
-        conn.change_window_attributes(window.id(), &values::disable_events());
-
-        conn.unmap_window(window.id());
-
-        conn.change_window_attributes(window.id(), &values::child_events());
-    }
-}
-
 pub fn add_window(conn: &XConn, ws: &mut Workspace, screen: &Screen, window_id: XWindowID) {
     let mut window = Window::from(window_id);
 
@@ -42,16 +17,16 @@ pub fn add_window(conn: &XConn, ws: &mut Workspace, screen: &Screen, window_id: 
     }
     conn.configure_window(window.id(), &[(xcb::CONFIG_WINDOW_BORDER_WIDTH as u16, 5)]);
 
-    window.xwindow.update_geometry_conn(conn);
+    window.xwindow.set_geometry_conn(conn);
 
     match conn.query_pointer(screen.xwindow.id) {
         Ok(pointer) => {
             if pointer.child() == screen.xwindow.id || pointer.child() == window_id {
-                set_focus_colour(conn, pointer.child());
-                conn.set_input_focus(window_id);
+                window_focus(conn, ws, window_id);
             } else {
                 if let Some(focused) = ws.windows.focused() {
                     set_unfocus_colour(conn, focused.id());
+                    window_focus(conn, ws, window_id);
                 } else {
                     set_unfocus_colour(conn, window_id);
                 }

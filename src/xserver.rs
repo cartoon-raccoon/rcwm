@@ -100,7 +100,8 @@ impl From<XWindowID> for XWindow {
 
 #[allow(dead_code)]
 impl XWindow {
-    pub fn update_geometry_conn(&mut self, conn: &XConn) {
+    /// Sets the geometry using a provided XConn.
+    pub fn set_geometry_conn(&mut self, conn: &XConn) {
         match conn.get_geometry(self.id) {
             Ok(geom) => {
                 debug!(
@@ -117,59 +118,75 @@ impl XWindow {
         }
     }
 
-    pub fn update_geometry(&mut self, geom: Geometry) {
+    /// Sets the geometry using a provided Geometry.
+    pub fn set_geometry(&mut self, geom: Geometry) {
         debug!(
             "Updating geometry:\nx: {}, y: {}, h: {}, w: {}", 
             geom.x, geom.y, geom.height, geom.width
         );
         self.geom = geom;
     }
-
+    /// Updates the width by a given difference.
     pub fn update_width(&mut self, dx: i32) {
         self.geom.width += dx;
     }
-
+    /// Updates the height by given difference.
     pub fn update_height(&mut self, dy: i32) {
         self.geom.height += dy;
     }
-
+    /// Updates the x coordinate of the window by a given difference.
     pub fn update_pos_x(&mut self, dx: i32) {
         self.geom.x += dx;
     }
-
+    /// Updates the y coordinate of the window by a given difference.
     pub fn update_pos_y(&mut self, dy: i32) {
         self.geom.y += dy;
     }
 }
 
+/// Holds a handle to an xcb connection, as well as other attributes
+/// about the window manager.
 pub struct XConn<'a> {
     pub conn: &'a ewmh::Connection,
     pub atoms: InternedAtoms,
     pub cursor: xcb::Cursor,
     pub keysyms: KeySymbols<'a>,
+    pub current_scr: i32,
 }
 
 #[allow(dead_code)]
 impl<'a> XConn<'a> {
-    pub fn new(xconn: &'a ewmh::Connection) -> Self {
+    /// Creates a new X Connection.
+    pub fn new(xconn: &'a ewmh::Connection, idx: i32) -> Self {
         Self {
             conn: xconn,
             atoms: InternedAtoms::new(xconn),
             cursor: 0,
             keysyms: KeySymbols::new(xconn),
+            current_scr: idx,
         }
     }
-
+    /// Gets the setup of the underlying xcb connection.
     pub fn get_setup(&self) -> xcb::Setup {
         self.conn.get_setup()
     }
-
-    pub fn get_root_id(&self, idx: i32) -> XWindowID {
+    /// Get the root ID of the current screen.
+    pub fn get_root_id(&self) -> XWindowID {
         self.conn.get_setup()
             .roots()
-            .nth(idx as usize)
+            .nth(self.current_scr as usize)
             .expect("Could not get root id")
             .root()
+    }
+    /// Get the root geometry (which is usually the screen resolution)
+    pub fn get_root_geom(&self) -> Result<Geometry> {
+        let root_id = self.get_root_id();
+
+        self.get_geometry(root_id)
+    }
+
+    pub fn set_root_scr(&mut self, scr: i32) {
+        self.current_scr = scr;
     }
 
     pub fn query_tree(&self, window: XWindowID) -> Result<Vec<XWindowID>> {
