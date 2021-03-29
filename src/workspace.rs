@@ -16,6 +16,7 @@ pub struct Workspace {
     pub _add_window: fn(&XConn, &mut Workspace, &Screen, XWindowID),
     pub _del_window: fn(&XConn, &mut Workspace, &Screen, XWindowID, usize) -> Window,
     pub _focus_window: fn(&XConn, &mut Workspace, XWindowID),
+    // pub _cycle_focus: fn(&XConn, &mut Workspace),
 }
 
 impl Default for Workspace {
@@ -30,6 +31,7 @@ impl Default for Workspace {
             _add_window: floating::add_window,
             _del_window: floating::del_window,
             _focus_window: floating::window_focus,
+            // _cycle_focus
         }
     }
 }
@@ -43,11 +45,22 @@ impl Workspace {
                 master: None,
                 layout: layout,
     
-                _activate: layout::activate,
-                _deactivate: layout::deactivate,
+                _activate: floating::activate,
+                _deactivate: floating::deactivate,
                 _add_window: floating::add_window,
                 _del_window: floating::del_window,
                 _focus_window: floating::window_focus,
+            },
+            LayoutType::DTiled => Self {
+                windows: Windows::default(),
+                master: None,
+                layout: layout,
+
+                _activate: dtiled::activate,
+                _deactivate: dtiled::deactivate,
+                _add_window: dtiled::add_window,
+                _del_window: dtiled::del_window,
+                _focus_window: dtiled::window_focus,
             },
             unhandled => {
                 error!("Layout type {:?} not supported", unhandled);
@@ -70,6 +83,21 @@ impl Workspace {
                 error!("Layout type {:?} not supported", unhandled)
             }
         }
+    }
+
+    pub fn push_window(&mut self, window: Window) {
+        if let LayoutType::Floating = self.layout {
+            self.windows.push(window);
+        } else if let None = self.master {
+            if !self.windows.is_empty() {
+                warn!("Windows is not empty but workspace has a master")
+            }
+            self.set_master(window.id());
+            self.windows.push(window);
+        } else {
+            self.windows.insert(1, window);
+        }
+
     }
 
     pub fn set_master(&mut self, master_id: XWindowID) {
