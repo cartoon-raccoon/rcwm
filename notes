@@ -1,5 +1,6 @@
 todo: 
-    add sighandlers
+    use window state properly
+    implement del window for tiling
     implement tiling algorithm(s)
     implement config file reading and integrate
     add ewmh and icccm support
@@ -17,3 +18,11 @@ conventions and rules
 use the id to lookup windows, and instead pass references
 to their storage structures
 (allows you to mutably borrow windows within a single scope)
+
+Dynamic tiling:
+- Adding windows
+    if no windows exist, make new window master
+    follow master-slave example
+- Removing windows
+    remove window, then select new master from windows
+    reconfigure window layout
