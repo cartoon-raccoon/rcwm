@@ -6,6 +6,8 @@ use crate::workspace::Workspace;
 use crate::window::Screen;
 use crate::values;
 
+pub const BORDER_WIDTH: u32 = 2;
+
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum LayoutType {
