@@ -3,10 +3,18 @@ use crate::workspace::Workspace;
 use crate::window::{Window, Screen};
 use crate::values;
 
-use super::{set_focus_colour, set_unfocus_colour};
+use super::{set_focus_colour, set_unfocus_colour, BORDER_WIDTH};
+
+pub fn activate(conn: &XConn, ws: &mut Workspace, screen: &Screen) {
+    super::activate(conn, ws, screen)
+}
+
+pub fn deactivate(conn: &XConn, ws: &mut Workspace) {
+    super::deactivate(conn, ws)
+}
 
 pub fn add_window(conn: &XConn, ws: &mut Workspace, screen: &Screen, window_id: XWindowID) {
-    let mut window = Window::from(window_id);
+    let mut window = Window::floating(window_id);
 
     window.set_supported(conn);
 
@@ -15,7 +23,7 @@ pub fn add_window(conn: &XConn, ws: &mut Workspace, screen: &Screen, window_id: 
     if let Some(focused) = ws.windows.focused() {
         conn.configure_window(window_id, &values::stack_above_sibling(focused.id()));
     }
-    conn.configure_window(window.id(), &[(xcb::CONFIG_WINDOW_BORDER_WIDTH as u16, 5)]);
+    conn.configure_window(window.id(), &[(xcb::CONFIG_WINDOW_BORDER_WIDTH as u16, BORDER_WIDTH)]);
 
     window.xwindow.set_geometry_conn(conn);
 
