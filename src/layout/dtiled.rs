@@ -152,7 +152,15 @@ pub fn del_window(
 ) -> Window {
     //todo: placeholder
     if ws.is_master(window_id) {
-        ws.master = None;
+        debug!("Window to destroy is master, doing pre-unmap checks");
+        if ws.windows.len() == 1 {
+            debug!("Workspace is now empty, unsetting master");
+            ws.unset_master(); //workspace is now empty
+        } else {
+            debug!("Workspace has {} windows, unmapping", ws.windows.len());
+            let new_master = ws.windows.get(1).unwrap().id();
+            ws.set_master(new_master);
+        }
     }
     super::floating::del_window(conn, ws, screen, window_id, idx)
 }

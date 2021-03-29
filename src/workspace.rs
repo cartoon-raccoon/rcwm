@@ -104,6 +104,10 @@ impl Workspace {
         self.master = Some(master_id);
     }
 
+    pub fn unset_master(&mut self) {
+        self.master = None;
+    }
+
     #[inline]
     pub fn is_master(&self, win_id: XWindowID) -> bool {
         if let Some(win) = self.master {
