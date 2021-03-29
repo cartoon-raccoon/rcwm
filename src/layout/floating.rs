@@ -82,7 +82,7 @@ pub fn window_focus(conn: &XConn, ws: &mut Workspace, window: XWindowID) {
             set_unfocus_colour(conn, focused.id());
         }
         // internally focus
-        ws.windows.move_front(idx);
+        ws.windows.set_focused_by_idx(idx);
         
         debug!("Moving window {} to the front",  window);
         debug!("{}", ws.windows[0].id());
