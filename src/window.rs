@@ -25,7 +25,7 @@ fn ensure_in_bounds(val: &mut i32, min: i32, max: i32) {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Geometry {
     pub x: i32,
     pub y: i32,
@@ -77,7 +77,7 @@ impl From<LayoutType> for WindowState {
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Window {
     pub xwindow: XWindow,
     pub state: WindowState,
@@ -227,6 +227,7 @@ impl Window {
 #[derive(Default, Clone)]
 pub struct Windows {
     windows: VecDeque<Window>,
+    focused: Option<XWindowID>,
 }
 
 #[allow(dead_code)]
@@ -253,6 +254,10 @@ impl Windows {
         self.move_front(idx);
 
         self.windows.pop_front().unwrap()
+    }
+
+    pub fn insert(&mut self, idx: usize, window: Window) {
+        self.windows.insert(idx, window)
     }
 
     pub fn get(&self, idx: usize) -> Option<&Window> {
@@ -282,12 +287,33 @@ impl Windows {
         self.windows.iter()
     }
 
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut Window> {
+        self.windows.iter_mut()
+    }
+
     pub fn iter_rev(&mut self) -> impl Iterator<Item = &Window> {
         self.windows.iter().rev()
     }
 
+    pub fn set_focused(&mut self, id: XWindowID) {
+        if let Some(_) = self.contains(id) {
+            self.focused = Some(id)
+        } else {
+            error!("Tried to focus a window not in the workspace")
+        }
+    }
+
+    // Will panic if idx is oob.
+    pub fn set_focused_by_idx(&mut self, idx: usize) {
+        self.focused = Some(self[idx].id())
+    }
+
     pub fn focused(&self) -> Option<&Window> {
-        self.windows.get(0)
+        if let Some(win) = self.focused {
+            return self.lookup(win)
+        }
+
+        None
     }
 
     pub fn is_focused(&self, id: XWindowID) -> bool {
