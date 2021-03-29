@@ -74,7 +74,7 @@ impl<'a> WM<'a> {
         let mut new = Self {
             conn: xconn,
             desktop: Desktop::new(LayoutType::Floating),
-            screen: Screen::new(screen_idx, root_id),
+            screen: screen,
             root: screen_idx,
             layout: LayoutType::Floating,
             mousemode: MouseMode::None,
