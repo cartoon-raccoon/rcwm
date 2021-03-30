@@ -118,6 +118,22 @@ impl Window {
         }
     }
 
+    #[inline]
+    pub fn is_tiled(&self) -> bool {
+        if let WindowState::Tiled = self.state {
+            return true
+        }
+        false
+    }
+
+    #[inline]
+    pub fn is_floating(&self) -> bool {
+        if let WindowState::Floating = self.state {
+            return true
+        }
+        false
+    }
+
     #[inline(always)]
     pub fn id(&self) -> XWindowID {
         self.xwindow.id
@@ -196,8 +212,25 @@ impl Window {
         );
     }
 
-    // Updates and sets the window geometry with a given Geometry.
-    pub fn update_geometry(&mut self, conn: &XConn, geom: Geometry) {
+    pub fn set_geometry(&mut self, geom: Geometry) {
+        self.xwindow.set_geometry(geom);
+    }
+
+    /// Updates its geometry on the X server.
+    pub fn update_geometry(&mut self, conn: &XConn) {
+        conn.configure_window(self.xwindow.id, &values::configure_resize(
+            self.width() as u32,
+            self.height() as u32,
+        ));
+
+        conn.configure_window(self.xwindow.id, &values::configure_move(
+            self.x() as u32,
+            self.y() as u32,
+        ))
+    }
+
+    /// Updates and sets the window geometry with a given Geometry.
+    pub fn set_and_update_geometry(&mut self, conn: &XConn, geom: Geometry) {
         self.xwindow.set_geometry(geom);
 
         conn.configure_window(self.xwindow.id, &values::configure_resize(
@@ -224,7 +257,7 @@ impl Window {
     }
 }
 
-#[derive(Default, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct Windows {
     windows: VecDeque<Window>,
     focused: Option<XWindowID>,
@@ -301,6 +334,11 @@ impl Windows {
         } else {
             error!("Tried to focus a window not in the workspace")
         }
+    }
+
+    #[inline(always)]
+    pub fn unset_focused(&mut self) {
+        self.focused = None
     }
 
     // Will panic if idx is oob.
