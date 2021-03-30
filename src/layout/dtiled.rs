@@ -6,6 +6,10 @@ use crate::values;
 use super::BORDER_WIDTH;
 
 pub fn activate(conn: &XConn, ws: &mut Workspace, screen: &Screen) {
+    // we cannot use the base activate function here as it cannot
+    // account for when a new window is sent to the workspace from another
+    
+    
     super::activate(conn, ws, screen)
 }
 
@@ -25,6 +29,8 @@ pub fn add_window(conn: &XConn, ws: &mut Workspace, screen: &Screen, window_id: 
         debug!("gotten: {:?}", root_geom);
         debug!("stored: {:?}", root_geom2);
     }
+
+    let pre_master = ws.master.is_some();
 
     if let Some(mstr) = ws.master() {
         debug!("Master exists, using tiling algo");
@@ -124,6 +130,7 @@ pub fn add_window(conn: &XConn, ws: &mut Workspace, screen: &Screen, window_id: 
 
 
     } else {
+        debug!("No master exists, tiling to full window");
         // if there is no master window, this should mean the workspace is empty
         // and we are mapping the master window
         if !ws.is_empty() {
@@ -140,7 +147,13 @@ pub fn add_window(conn: &XConn, ws: &mut Workspace, screen: &Screen, window_id: 
     conn.map_window(window.id());
     conn.change_window_attributes(window.id(), &values::child_events());
 
-    ws.windows.push(window);
+    if pre_master {
+        debug!("Pre-existing master, inserting after");
+        ws.windows.insert(1, window);
+    } else {
+        debug!("No pre-existing master, pushing directly");
+        ws.windows.push(window);
+    }
 }
 
 pub fn del_window(
@@ -151,18 +164,33 @@ pub fn del_window(
     idx: usize
 ) -> Window {
     //todo: placeholder
+    debug!("Got window with idx {}", idx);
+    let window = ws.windows.pop(idx);
+
+    conn.change_window_attributes(window_id, &values::disable_events());
+    conn.unmap_window(window_id);
+
     if ws.is_master(window_id) {
         debug!("Window to destroy is master, doing pre-unmap checks");
-        if ws.windows.len() == 1 {
+        if ws.windows.len() == 0 {
             debug!("Workspace is now empty, unsetting master");
             ws.unset_master(); //workspace is now empty
+            ws.windows.unset_focused();
         } else {
-            debug!("Workspace has {} windows, unmapping", ws.windows.len());
-            let new_master = ws.windows.get(1).unwrap().id();
+            debug!("Workspace has {} windows, setting new master", ws.windows.len());
+            let new_master = ws.windows.get(0).unwrap().id();
+            debug!("New master is now {}", new_master);
             ws.set_master(new_master);
+            debug!("Window at idx 0 is {:?}", ws.windows.get(0));
+            window_focus(conn, ws, new_master);
         }
     }
-    super::floating::del_window(conn, ws, screen, window_id, idx)
+
+    relayout(conn, ws, screen);
+
+    window
+
+    //super::floating::del_window(conn, ws, screen, window_id, idx)
 }
 
 pub fn window_focus(conn: &XConn, ws: &mut Workspace, window: XWindowID) {
@@ -171,5 +199,9 @@ pub fn window_focus(conn: &XConn, ws: &mut Workspace, window: XWindowID) {
 }
 
 pub fn toggle_floating() {
+
+}
+
+pub fn relayout(conn: &XConn, ws: &mut Workspace, screen: &Screen) {
 
 }
