@@ -127,6 +127,16 @@ impl Window {
     }
 
     #[inline]
+    pub fn set_tiled(&mut self) {
+        self.state = WindowState::Tiled
+    }
+
+    #[inline]
+    pub fn set_floating(&mut self) {
+        self.state = WindowState::Floating
+    }
+
+    #[inline]
     pub fn is_floating(&self) -> bool {
         if let WindowState::Floating = self.state {
             return true
