@@ -16,6 +16,7 @@ pub struct Workspace {
     pub _add_window: fn(&XConn, &mut Workspace, &Screen, XWindowID),
     pub _del_window: fn(&XConn, &mut Workspace, &Screen, XWindowID, usize) -> Window,
     pub _focus_window: fn(&XConn, &mut Workspace, XWindowID),
+    pub _relayout: fn(&XConn, &mut Workspace, &Screen),
     // pub _cycle_focus: fn(&XConn, &mut Workspace),
 }
 
@@ -28,9 +29,10 @@ impl Default for Workspace {
 
             _activate: layout::activate,
             _deactivate: layout::deactivate,
-            _add_window: floating::add_window,
-            _del_window: floating::del_window,
-            _focus_window: floating::window_focus,
+            _add_window: dtiled::add_window,
+            _del_window: dtiled::del_window,
+            _focus_window: dtiled::window_focus,
+            _relayout: dtiled::relayout,
             // _cycle_focus
         }
     }
@@ -50,6 +52,7 @@ impl Workspace {
                 _add_window: floating::add_window,
                 _del_window: floating::del_window,
                 _focus_window: floating::window_focus,
+                _relayout: floating::relayout,
             },
             LayoutType::DTiled => Self {
                 windows: Windows::default(),
@@ -61,6 +64,7 @@ impl Workspace {
                 _add_window: dtiled::add_window,
                 _del_window: dtiled::del_window,
                 _focus_window: dtiled::window_focus,
+                _relayout: dtiled::relayout,
             },
             unhandled => {
                 error!("Layout type {:?} not supported", unhandled);
@@ -136,6 +140,7 @@ impl Workspace {
 
     pub fn add_window(&mut self, conn: &XConn, screen: &Screen, id: XWindowID) {
         (self._add_window)(conn, self, screen, id);
+        dbg!(&self.windows);
     }
 
     pub fn del_window(&mut self, 
@@ -144,7 +149,9 @@ impl Workspace {
         id: XWindowID, 
         idx: usize
     ) -> Window {
-        (self._del_window)(conn, self, screen, id, idx)
+        let window = (self._del_window)(conn, self, screen, id, idx);
+        dbg!(&self.windows);
+        window
     }
 
     pub fn take_focused_window(&mut self,
