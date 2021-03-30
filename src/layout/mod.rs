@@ -27,6 +27,26 @@ fn set_unfocus_colour(conn: &XConn, window: XWindowID) {
     conn.change_window_attributes(window, &[(xcb::CW_BORDER_PIXEL, 0xdddddd)]);
 }
 
+fn window_stack_and_focus(ws: &mut Workspace, conn: &XConn, window: XWindowID) {
+    // disable events
+    conn.change_window_attributes(window, &values::disable_events());
+
+    // if there is a focused window, stack it above
+    if let Some(win) = ws.windows.focused() {
+        conn.configure_window(window, &values::stack_above_sibling(win.id()));
+    }
+
+    // focus to current window
+    conn.set_input_focus(window);
+    set_focus_colour(conn, window);
+
+    // re-enable events
+    conn.change_window_attributes(window, &values::child_events());
+}
+
+/// The base activate function.
+/// 
+/// Sequentially maps every window to the screen.
 pub fn activate(conn: &XConn, ws: &mut Workspace, _screen: &Screen) {
     if ws.windows.is_empty() {
         return
@@ -42,6 +62,9 @@ pub fn activate(conn: &XConn, ws: &mut Workspace, _screen: &Screen) {
     }
 }
 
+/// The base deactivate function.
+/// 
+/// Sequentially unmaps every window in reverse.
 pub fn deactivate(conn: &XConn, ws: &mut Workspace) {
     for window in ws.windows.iter() {
         conn.change_window_attributes(window.id(), &values::disable_events());

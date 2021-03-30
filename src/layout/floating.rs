@@ -3,7 +3,7 @@ use crate::workspace::Workspace;
 use crate::window::{Window, Screen};
 use crate::values;
 
-use super::{set_focus_colour, set_unfocus_colour, BORDER_WIDTH};
+use super::{set_unfocus_colour, BORDER_WIDTH};
 
 pub fn activate(conn: &XConn, ws: &mut Workspace, screen: &Screen) {
     super::activate(conn, ws, screen)
@@ -68,8 +68,12 @@ pub fn del_window(
     if idx == 0 {
         if let Some(next) = ws.windows.get(0) {
             //todo: fix immutable borrow thing
-            window_stack_and_focus(ws, conn, next.id());
+            super::window_stack_and_focus(ws, conn, next.id());
         }
+    }
+
+    if ws.is_empty() {
+        ws.windows.unset_focused();
     }
 
     window
@@ -84,27 +88,11 @@ pub fn window_focus(conn: &XConn, ws: &mut Workspace, window: XWindowID) {
         // internally focus
         ws.windows.set_focused_by_idx(idx);
         
-        debug!("Moving window {} to the front",  window);
-        debug!("{}", ws.windows[0].id());
-
         // tell x to focus
-        window_stack_and_focus(ws, conn, window)
+        super::window_stack_and_focus(ws, conn, window)
     }
 }
 
-fn window_stack_and_focus(ws: &mut Workspace, conn: &XConn, window: XWindowID) {
-    // disable events
-    conn.change_window_attributes(window, &values::disable_events());
-
-    // if there is a focused window, stack it above
-    if let Some(win) = ws.windows.focused() {
-        conn.configure_window(window, &values::stack_above_sibling(win.id()));
-    }
-
-    // focus to current window
-    conn.set_input_focus(window);
-    set_focus_colour(conn, window);
-
-    // re-enable events
-    conn.change_window_attributes(window, &values::child_events());
+pub fn relayout(_conn: &XConn, _ws: &mut Workspace, _screen: &Screen) {
+    // we do nothing because relayout is not needed
 }
