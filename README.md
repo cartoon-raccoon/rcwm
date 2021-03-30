@@ -5,7 +5,9 @@ A tiling X11 window manager written in Rust
 Written with XCB bindings because I'm a masochist.
 
 Right now it can do both floating and basic dynamic tiling (not yet fully implemented).
+
 It supports multiple workspaces.
+
 Non-reparenting (for now).
 
 Built upon [afwm](https://iim.gay:8080/afwm/about/) by grufwub.
