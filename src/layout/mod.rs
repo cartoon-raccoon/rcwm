@@ -9,6 +9,7 @@ use crate::values;
 pub const BORDER_WIDTH: u32 = 2;
 
 #[non_exhaustive]
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum LayoutType {
     /// All-floating layout.
@@ -47,14 +48,31 @@ fn window_stack_and_focus(ws: &mut Workspace, conn: &XConn, window: XWindowID) {
 /// The base activate function.
 /// 
 /// Sequentially maps every window to the screen.
-pub fn activate(conn: &XConn, ws: &mut Workspace, _screen: &Screen) {
+pub fn activate(conn: &XConn, ws: &mut Workspace, screen: &Screen) {
     if ws.windows.is_empty() {
         return
+    }
+
+    // focus the main window in the workspace
+    // if floating, focus the first window
+    // else (should be tiled), focus the master window
+    if let LayoutType::Floating = ws.layout {
+        assert!(ws.master.is_none());
+        if !ws.is_empty() {
+            ws.focus_window(conn, screen, ws.windows.get(0).unwrap().id());
+        }
+    } else {
+        debug!("Master is {:?}", ws.master);
+        if let Some(win) = ws.master {
+            ws.focus_window(conn, screen, win);
+        }
     }
 
     for window in ws.windows.iter_rev() {
         // disable events
         conn.change_window_attributes(window.id(), &values::disable_events());
+        // update window geometry in the x server
+        window.update_geometry(conn);
         // map window
         conn.map_window(window.id());
         // re-enable events
