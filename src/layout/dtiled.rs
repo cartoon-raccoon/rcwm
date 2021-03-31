@@ -6,6 +6,7 @@ use crate::values;
 use super::BORDER_WIDTH;
 
 pub fn activate(conn: &XConn, ws: &mut Workspace, screen: &Screen) {
+    function_ends!("[start] dtiled::activate");
     // we cannot use the base activate function here as it cannot
     // account for when a new window is sent to the workspace from another
 
@@ -20,15 +21,19 @@ pub fn activate(conn: &XConn, ws: &mut Workspace, screen: &Screen) {
     // reload the window layout
     relayout(conn, ws, screen);
     // now that all the geometries are calculated, we can map the normal way
-    super::activate(conn, ws, screen)
+    super::activate(conn, ws, screen);
+    function_ends!("[end] dtiled::activate");
 }
 
 pub fn deactivate(conn: &XConn, ws: &mut Workspace) {
+    function_ends!("[start] dtiled::deactivate");
     // no special treatment needed for this one.
-    super::deactivate(conn, ws)
+    super::deactivate(conn, ws);
+    function_ends!("[end] dtiled::deactivate");
 }
 
 pub fn add_window(conn: &XConn, ws: &mut Workspace, screen: &Screen, window_id: XWindowID) {
+    function_ends!("[start] dtiled::add_window");
     // Internally create a new window and set its supported protocols
     let mut window = Window::tiled(window_id);
     window.set_supported(conn);
@@ -68,8 +73,7 @@ pub fn add_window(conn: &XConn, ws: &mut Workspace, screen: &Screen, window_id: 
         }
     }
 
-    
-
+    function_ends!("[end] dtiled::add_window");
 }
 
 pub fn del_window(
@@ -79,7 +83,7 @@ pub fn del_window(
     window_id: XWindowID,
     idx: usize
 ) -> Window {
-    //todo: placeholder
+    function_ends!("[start] dtiled::del_window");
     debug!("Got window with idx {}", idx);
 
     // internally remove window from tracking
@@ -113,6 +117,7 @@ pub fn del_window(
         win.update_geometry(conn);
     }
 
+    function_ends!("[end] dtiled::del_window");
     window
 
     //super::floating::del_window(conn, ws, screen, window_id, idx)

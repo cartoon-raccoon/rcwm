@@ -14,6 +14,22 @@ macro_rules! debug {
     ($fmt:expr, $($arg:tt)*) => {};
 }
 
+#[cfg(debug_assertions)]
+macro_rules! function_ends {
+    ($fmt:expr) => {
+        (println!(concat!("================", $fmt, "================")));
+    };
+    ($fmt:expr, $($arg:tt)*) => {
+        (println!(concat!("================", $fmt "================"), $($arg)*));
+    };
+}
+
+#[cfg(not(debug_assertions))]
+macro_rules! function_ends {
+    ($fmt:expr) => {};
+    ($fmt:expr, $($arg:tt)*) => {};
+}
+
 macro_rules! info {
     ($fmt:expr) => {
         (println!(concat!("[*] ", $fmt)));
