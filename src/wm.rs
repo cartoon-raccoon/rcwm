@@ -73,10 +73,10 @@ impl<'a> WM<'a> {
 
         let mut new = Self {
             conn: xconn,
-            desktop: Desktop::new(LayoutType::Floating),
+            desktop: Desktop::new(LayoutType::DTiled),
             screen: screen,
             root: screen_idx,
-            layout: LayoutType::Floating,
+            layout: LayoutType::DTiled,
             mousemode: MouseMode::None,
             selected: None,
             last_mouse_x: 0,
@@ -172,19 +172,19 @@ impl<'a> WM<'a> {
 
             if xcb::CONFIG_WINDOW_Y as u16 & event.value_mask() != 0 {
                 values.push((xcb::CONFIG_WINDOW_Y as u16, event.x() as u32));
-                window.xwindow.update_pos_y(event.y() as i32);
+                window.xwindow.geom.y = event.y() as i32;
             }
             if xcb::CONFIG_WINDOW_X as u16 & event.value_mask() != 0 {
                 values.push((xcb::CONFIG_WINDOW_X as u16, event.x() as u32));
-                window.xwindow.update_pos_x(event.x() as i32);
+                window.xwindow.geom.x = event.x() as i32;
             }
             if xcb::CONFIG_WINDOW_WIDTH as u16 & event.value_mask() != 0 {
                 values.push((xcb::CONFIG_WINDOW_WIDTH as u16, event.width() as u32));
-                window.xwindow.update_width(event.width() as i32);
+                window.xwindow.geom.width = event.width() as i32;
             }
             if xcb::CONFIG_WINDOW_HEIGHT as u16 & event.value_mask() != 0 {
                 values.push((xcb::CONFIG_WINDOW_HEIGHT as u16, event.height() as u32));
-                window.xwindow.update_height(event.height() as i32);
+                window.xwindow.geom.height = event.height() as i32;
             }
 
             self.conn.configure_window(event.window(), &values);
