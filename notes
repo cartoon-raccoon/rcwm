@@ -1,7 +1,7 @@
 todo: 
-    use window state properly
-    implement del window for tiling
-    implement tiling algorithm(s)
+    use window state properly to track tiled windows
+    change window state to floating on move and relayout
+    implement manual tiling
     implement config file reading and integrate
     add ewmh and icccm support
 
