@@ -82,6 +82,7 @@ impl Workspace {
                 self._add_window = floating::add_window;
                 self._del_window = floating::del_window;
                 self._focus_window = floating::window_focus;
+                self._relayout = floating::relayout;
             }
             unhandled => {
                 error!("Layout type {:?} not supported", unhandled)
@@ -140,6 +141,7 @@ impl Workspace {
 
     pub fn add_window(&mut self, conn: &XConn, screen: &Screen, id: XWindowID) {
         (self._add_window)(conn, self, screen, id);
+        debug!("Current master is {:?}", self.master);
         dbg!(&self.windows);
     }
 
@@ -150,6 +152,7 @@ impl Workspace {
         idx: usize
     ) -> Window {
         let window = (self._del_window)(conn, self, screen, id, idx);
+        debug!("Current master is {:?}", self.master);
         dbg!(&self.windows);
         window
     }
@@ -159,8 +162,9 @@ impl Workspace {
         screen: &Screen,
     ) -> Option<Window> {
         if let Some(window) = self.windows.focused() {
+            let idx = self.windows.contains(window.id()).unwrap();
             let window = window.to_owned();
-            self.del_window(conn, screen, window.id(), 0);
+            self.del_window(conn, screen, window.id(), idx);
 
             Some(window)
         } else {
@@ -172,6 +176,10 @@ impl Workspace {
         debug!("Focusing window in workspace {}", id);
 
         (self._focus_window)(conn, self, id);
+    }
+
+    pub fn relayout(&mut self, conn: &XConn, scr: &Screen) {
+        (self._relayout)(conn, self, scr);
     }
 
     pub fn contains(&self, window: XWindowID) -> Option<usize> {
