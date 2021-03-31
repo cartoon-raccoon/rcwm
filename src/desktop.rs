@@ -92,6 +92,8 @@ impl Desktop {
         if let Some(window) = self.current_mut().take_focused_window(conn, scr) {
             debug!("Sending window {} to workspace {}", window.id(), idx);
             self.workspaces[idx].push_window(window);
+        } else {
+            debug!("No focused window for workspace {}", idx);
         }
         self.current_mut().relayout(conn, scr);
     }
