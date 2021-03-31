@@ -88,9 +88,11 @@ impl Desktop {
     }
 
     pub fn send_window_to(&mut self, conn: &XConn, scr: &Screen, idx: usize) {
+        debug!("Attempting to send window to workspace {}", idx);
         if let Some(window) = self.current_mut().take_focused_window(conn, scr) {
             debug!("Sending window {} to workspace {}", window.id(), idx);
             self.workspaces[idx].push_window(window);
         }
+        self.current_mut().relayout(conn, scr);
     }
 }
