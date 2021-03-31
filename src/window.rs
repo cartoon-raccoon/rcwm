@@ -227,7 +227,7 @@ impl Window {
     }
 
     /// Updates its geometry on the X server.
-    pub fn update_geometry(&mut self, conn: &XConn) {
+    pub fn update_geometry(&self, conn: &XConn) {
         conn.configure_window(self.xwindow.id, &values::configure_resize(
             self.width() as u32,
             self.height() as u32,
