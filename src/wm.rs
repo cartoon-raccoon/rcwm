@@ -295,7 +295,7 @@ impl<'a> WM<'a> {
                 debug!("Middle mouse button selected")
             }
             _ => {
-                fatal!("Unhandled mouse button event")
+                warn!("Unhandled mouse button event")
             }
 
         }
@@ -312,6 +312,7 @@ impl<'a> WM<'a> {
 
     pub fn on_motion_notify(&mut self, event: &xcb::MotionNotifyEvent) {
         if let Some(selected) = self.selected {
+            self.desktop.current_mut().focus_window(&self.conn, &self.screen, selected);
             debug!("On motion notify");
 
             let dx = event.root_x() as i32 - self.last_mouse_x;
@@ -328,9 +329,19 @@ impl<'a> WM<'a> {
                     }
                     MouseMode::Move => {
                         selected.do_move(&self.conn, &self.screen, dx, dy);
+                        if selected.is_tiled() {
+                            selected.set_floating();
+                            self.desktop.current_mut().relayout(&self.conn, &self.screen);
+                            assert!(self.desktop.current().is_tiling());
+                        }
                     }
                     MouseMode::Resize => {
                         selected.do_resize(&self.conn, &self.screen, dx, dy);
+                        if selected.is_tiled() {
+                            selected.set_floating();
+                            self.desktop.current_mut().relayout(&self.conn, &self.screen);
+                            assert!(self.desktop.current().is_tiling());
+                        }
                     }
                 }
             }
