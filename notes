@@ -1,6 +1,5 @@
 todo: 
-    use window state properly to track tiled windows
-    change window state to floating on move and relayout
+    start adding icccm support
     implement manual tiling
     implement config file reading and integrate
     add ewmh and icccm support
