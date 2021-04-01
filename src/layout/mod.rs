@@ -28,7 +28,7 @@ fn set_unfocus_colour(conn: &XConn, window: XWindowID) {
     conn.change_window_attributes(window, &[(xcb::CW_BORDER_PIXEL, 0xdddddd)]);
 }
 
-fn window_stack_and_focus(ws: &mut Workspace, conn: &XConn, window: XWindowID) {
+fn window_stack_and_focus(_ws: &mut Workspace, conn: &XConn, window: XWindowID) {
     // disable events
     conn.change_window_attributes(window, &values::disable_events());
 

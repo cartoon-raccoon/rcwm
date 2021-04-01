@@ -40,13 +40,13 @@ pub fn add_window(conn: &XConn, ws: &mut Workspace, screen: &Screen, window_id: 
     window.set_supported(conn);
 
     // Get root geometries
-    let root_geom = conn.get_root_geom().expect("Could not get root geometry");
-    let root_geom2 = screen.xwindow.geom;
+    let root_geom = screen.xwindow.geom;
+    let root_geom2 = conn.get_root_geom().expect("Could not get root geometry");
 
     if root_geom != root_geom2 {
         warn!("Stored geom and retrieved geom mismatch");
-        debug!("gotten: {:?}", root_geom);
-        debug!("stored: {:?}", root_geom2);
+        debug!("stored: {:?}", root_geom);
+        debug!("gotten: {:?}", root_geom2);
     }
 
     // Add new windows
@@ -125,16 +125,6 @@ pub fn window_focus(conn: &XConn, ws: &mut Workspace, window: XWindowID) {
     super::floating::window_focus(conn, ws, window)
 }
 
-pub fn toggle_floating(ws: &mut Workspace, window: XWindowID) {
-    if let Some(win) = ws.windows.lookup_mut(window) {
-        if win.is_tiled() {
-            win.set_floating();
-        } else {
-            win.set_tiled();
-        }
-    }
-}
-
 pub fn relayout(conn: &XConn, ws: &mut Workspace, screen: &Screen) {
     let root_geom = conn.get_root_geom().expect("Could not get root geom");
     calculate_geoms(ws, screen, root_geom);
@@ -146,7 +136,7 @@ pub fn relayout(conn: &XConn, ws: &mut Workspace, screen: &Screen) {
 fn calculate_geoms(ws: &mut Workspace, _screen: &Screen, root_geom: Geometry) {
     function_ends!("[start] dtiled::calculate_geoms");
     assert!(ws.is_tiling(), "calculate_geoms called while workspace is tiling");
-    
+
     // Calculate the tile sizes
     if let Some(mstr) = ws.master() {
         if ws.is_empty() {
@@ -158,7 +148,7 @@ fn calculate_geoms(ws: &mut Workspace, _screen: &Screen, root_geom: Geometry) {
         // if the master window is the only window
         // it takes up the entire screen
         if ws.tiled_count() == 1 {
-            debug!("dtiled::calculate_geoms: Only master mapped, tiling to full window");
+            debug!("dtiled::calculate_geoms: Only master exists, tiling to full window");
             // if there is no master window, this should mean the workspace is empty
             // and we are mapping the master window
             let master = ws.windows.lookup_mut(mstr).unwrap();
