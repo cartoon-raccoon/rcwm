@@ -15,6 +15,8 @@ pub const KEYBINDS: &[Keybind] = &[
     (MODKEY|SHIFT, keysym::XK_1, |wm| {wm.send_window_to(0)}),
     (MODKEY|SHIFT, keysym::XK_2, |wm| {wm.send_window_to(1)}),
 
+    (MODKEY, keysym::XK_t, |wm| {wm.desktop.current_mut().toggle_focused_state(&wm.conn, &wm.screen)}),
+
     (MODKEY, keysym::XK_w, close_window),
 
     (MODKEY|SHIFT, keysym::XK_q, |wm| {wm.quit()}),
