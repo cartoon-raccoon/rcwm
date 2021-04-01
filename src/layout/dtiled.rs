@@ -19,7 +19,8 @@ pub fn activate(conn: &XConn, ws: &mut Workspace, screen: &Screen) {
     // }
     
     // reload the window layout
-    relayout(conn, ws, screen);
+    let root_geom = conn.get_root_geom().expect("Could not get root geom");
+    calculate_geoms(ws, screen, root_geom);
     // now that all the geometries are calculated, we can map the normal way
     super::activate(conn, ws, screen);
     function_ends!("[end] dtiled::activate");
@@ -66,10 +67,10 @@ pub fn add_window(conn: &XConn, ws: &mut Workspace, screen: &Screen, window_id: 
     for win in ws.windows.iter_mut() {
         win.update_geometry(conn);
         if win.id() == window_id {
-            conn.configure_window(win.id(), &[(xcb::CONFIG_WINDOW_BORDER_WIDTH as u16, BORDER_WIDTH)]);
+            win.configure(conn, &[(xcb::CONFIG_WINDOW_BORDER_WIDTH as u16, BORDER_WIDTH)]);
 
             conn.map_window(win.id());
-            conn.change_window_attributes(win.id(), &values::child_events());
+            win.change_attributes(conn, &values::child_events());
         }
     }
 
@@ -96,12 +97,12 @@ pub fn del_window(
     // set new workspace master or unset it if empty
     if ws.is_master(window_id) {
         debug!("dtiled::del_window: Window to destroy is master, doing unmap checks");
-        if ws.windows.len() == 0 {
+        if ws.tiled_count() == 0 {
             debug!("dtiled::del_window: Workspace is now empty, unsetting master");
             ws.unset_master(); //workspace is now empty
             ws.windows.unset_focused();
         } else {
-            debug!("dtiled::del_window: Workspace has {} windows, setting new master", ws.windows.len());
+            debug!("dtiled::del_window: Workspace has {} tiled windows, setting new master", ws.tiled_count());
             let new_master = ws.windows.get(0).unwrap().id();
             debug!("New master is now {}", new_master);
             ws.set_master(new_master);
@@ -112,10 +113,6 @@ pub fn del_window(
 
     // recalculate layouts
     relayout(conn, ws, screen);
-
-    for win in ws.windows.iter_mut() {
-        win.update_geometry(conn);
-    }
 
     function_ends!("[end] dtiled::del_window");
     window
@@ -141,6 +138,9 @@ pub fn toggle_floating(ws: &mut Workspace, window: XWindowID) {
 pub fn relayout(conn: &XConn, ws: &mut Workspace, screen: &Screen) {
     let root_geom = conn.get_root_geom().expect("Could not get root geom");
     calculate_geoms(ws, screen, root_geom);
+    for win in ws.windows.iter_mut() {
+        win.update_geometry(conn);
+    }
 }
 
 fn calculate_geoms(ws: &mut Workspace, _screen: &Screen, root_geom: Geometry) {
@@ -154,7 +154,7 @@ fn calculate_geoms(ws: &mut Workspace, _screen: &Screen, root_geom: Geometry) {
 
         // if the master window is the only window
         // it takes up the entire screen
-        if ws.windows.len() == 1 {
+        if ws.tiled_count() == 1 {
             debug!("dtiled::calculate_geoms: New window is master, tiling to full window");
             // if there is no master window, this should mean the workspace is empty
             // and we are mapping the master window
@@ -162,7 +162,7 @@ fn calculate_geoms(ws: &mut Workspace, _screen: &Screen, root_geom: Geometry) {
 
             master.set_geometry(root_geom);
 
-        } else if ws.windows.len() == 2 {
+        } else if ws.tiled_count() == 2 {
             debug!("dtiled::calculate_geoms: Only master window currently mapped");
 
             // move master window to the front
@@ -228,7 +228,7 @@ fn calculate_geoms(ws: &mut Workspace, _screen: &Screen, root_geom: Geometry) {
             }
 
             // get no of slave windows
-            let slave_count = ws.windows.len() - 1; //
+            let slave_count = if ws.tiled_count() == 0 { 0 } else { ws.tiled_count() - 1 };
 
             // calculate new height of all slave windows
             let slave_height = root_geom.height / slave_count as i32;
@@ -256,9 +256,6 @@ fn calculate_geoms(ws: &mut Workspace, _screen: &Screen, root_geom: Geometry) {
 
             
         }
-
-
-
     } else {
         assert!(ws.is_empty(), "Master is None but workspace is not empty")
     }
