@@ -57,8 +57,8 @@ pub fn add_window(conn: &XConn, ws: &mut Workspace, screen: &Screen, window_id: 
         ws.windows.insert(1, window);
     } else {
         debug!("dtiled::add_window: No pre-existing master, pushing directly");
-        ws.set_master(window.id());
         ws.windows.push(window);
+        ws.set_master(window_id);
     }
 
     // Calculate the tile sizes
@@ -144,6 +144,9 @@ pub fn relayout(conn: &XConn, ws: &mut Workspace, screen: &Screen) {
 }
 
 fn calculate_geoms(ws: &mut Workspace, _screen: &Screen, root_geom: Geometry) {
+    function_ends!("[start] dtiled::calculate_geoms");
+    assert!(ws.is_tiling(), "calculate_geoms called while workspace is tiling");
+    
     // Calculate the tile sizes
     if let Some(mstr) = ws.master() {
         if ws.is_empty() {
@@ -155,7 +158,7 @@ fn calculate_geoms(ws: &mut Workspace, _screen: &Screen, root_geom: Geometry) {
         // if the master window is the only window
         // it takes up the entire screen
         if ws.tiled_count() == 1 {
-            debug!("dtiled::calculate_geoms: New window is master, tiling to full window");
+            debug!("dtiled::calculate_geoms: Only master mapped, tiling to full window");
             // if there is no master window, this should mean the workspace is empty
             // and we are mapping the master window
             let master = ws.windows.lookup_mut(mstr).unwrap();
@@ -163,7 +166,7 @@ fn calculate_geoms(ws: &mut Workspace, _screen: &Screen, root_geom: Geometry) {
             master.set_geometry(root_geom);
 
         } else if ws.tiled_count() == 2 {
-            debug!("dtiled::calculate_geoms: Only master window currently mapped");
+            debug!("dtiled::calculate_geoms: 1 master + 1 slave, mapping half-half");
 
             // move master window to the front
             let master_idx = ws.windows.contains(mstr).unwrap();
@@ -257,6 +260,11 @@ fn calculate_geoms(ws: &mut Workspace, _screen: &Screen, root_geom: Geometry) {
             
         }
     } else {
-        assert!(ws.is_empty(), "Master is None but workspace is not empty")
+        if !ws.is_empty() {
+            for window in ws.windows.iter() {
+                assert!(window.is_floating(), "No master but window is tiled");
+            }
+        }
     }
+    function_ends!("[end] dtiled::calculate_geoms");
 }
