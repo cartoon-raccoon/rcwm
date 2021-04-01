@@ -131,6 +131,20 @@ impl Workspace {
         self.windows.len() == 0
     }
 
+    pub fn is_tiling(&self) -> bool {
+        if let LayoutType::Floating = self.layout {
+            return false
+        }
+        true
+    }
+
+    pub fn is_floating(&self) -> bool {
+        if let LayoutType::Floating = self.layout {
+            return true
+        }
+        false
+    }
+
     pub fn activate(&mut self, conn: &XConn, screen: &Screen) {
         (self._activate)(conn, self, screen);
     }
