@@ -33,9 +33,10 @@ fn window_stack_and_focus(ws: &mut Workspace, conn: &XConn, window: XWindowID) {
     conn.change_window_attributes(window, &values::disable_events());
 
     // if there is a focused window, stack it above
-    if let Some(win) = ws.windows.focused() {
-        conn.configure_window(window, &values::stack_above_sibling(win.id()));
-    }
+    // if let Some(win) = ws.windows.focused() {
+    //     debug!("Focusing window {}", win.id());
+    //     conn.configure_window(window, &values::stack_above_sibling(win.id()));
+    // }
 
     // focus to current window
     conn.set_input_focus(window);
@@ -70,13 +71,13 @@ pub fn activate(conn: &XConn, ws: &mut Workspace, screen: &Screen) {
 
     for window in ws.windows.iter_rev() {
         // disable events
-        conn.change_window_attributes(window.id(), &values::disable_events());
+        window.change_attributes(conn, &values::disable_events());
         // update window geometry in the x server
         window.update_geometry(conn);
         // map window
         conn.map_window(window.id());
         // re-enable events
-        conn.change_window_attributes(window.id(), &values::child_events());
+        window.change_attributes(conn, &values::child_events());
     }
 }
 

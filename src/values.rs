@@ -44,10 +44,10 @@ pub fn configure_resize(width: u32, height: u32) -> [(u16, u32); 2] {
     return [(xcb::CONFIG_WINDOW_WIDTH as u16, width), (xcb::CONFIG_WINDOW_HEIGHT as u16, height)];
 }
 
-pub fn stack_above_sibling(window_id: XWindowID) -> [(u16, u32); 2] {
+pub fn stack_above_sibling(_window_id: XWindowID) -> [(u16, u32); 1] {
     //debug!("VALUES: configure stack above sibling {}", window_id);
     return [
         (xcb::CONFIG_WINDOW_STACK_MODE as u16, xcb::STACK_MODE_ABOVE),
-        (xcb::CONFIG_WINDOW_SIBLING as u16, window_id),
+        //(xcb::CONFIG_WINDOW_SIBLING as u16, window_id),
     ];
 }

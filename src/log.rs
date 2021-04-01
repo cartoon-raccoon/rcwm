@@ -17,10 +17,10 @@ macro_rules! debug {
 #[cfg(debug_assertions)]
 macro_rules! function_ends {
     ($fmt:expr) => {
-        (println!(concat!("================", $fmt, "================")));
+        (println!(concat!("================ ", $fmt, " ================")));
     };
     ($fmt:expr, $($arg:tt)*) => {
-        (println!(concat!("================", $fmt "================"), $($arg)*));
+        (println!(concat!("================ ", $fmt " ================"), $($arg)*));
     };
 }
 
