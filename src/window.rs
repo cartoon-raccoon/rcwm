@@ -11,7 +11,7 @@ use crate::xserver::{
     XWindowID
 };
 use crate::values;
-use crate::layout::LayoutType;
+use crate::types::WindowState;
 
 pub const WIN_HEIGHT_MIN: i32 = 100;
 pub const WIN_WIDTH_MIN: i32 = 100;
@@ -56,24 +56,6 @@ impl Screen {
             xwindow: XWindow::from(root_id),
             idx: screen_idx,
         }
-    }
-}
-
-#[derive(Clone, Copy, Debug)]
-pub enum WindowState {
-    Tiled,
-    Floating,
-}
-
-impl From<LayoutType> for WindowState {
-
-    #[inline]
-    fn from(from: LayoutType) -> WindowState {
-        if let LayoutType::Floating = from {
-            return Self::Floating
-        }
-
-        Self::Tiled
     }
 }
 
@@ -127,6 +109,14 @@ impl Window {
     }
 
     #[inline]
+    pub fn is_floating(&self) -> bool {
+        if let WindowState::Floating = self.state {
+            return true
+        }
+        false
+    }
+
+    #[inline]
     pub fn set_tiled(&mut self) {
         self.state = WindowState::Tiled
     }
@@ -134,14 +124,6 @@ impl Window {
     #[inline]
     pub fn set_floating(&mut self) {
         self.state = WindowState::Floating
-    }
-
-    #[inline]
-    pub fn is_floating(&self) -> bool {
-        if let WindowState::Floating = self.state {
-            return true
-        }
-        false
     }
 
     #[inline(always)]
@@ -194,6 +176,19 @@ impl Window {
             "Updated geometry:\nx: {}, y: {}, h: {}, w: {}", 
             self.x(), self.y(), self.height(), self.width()
         );
+    }
+    
+    /// Configure the window using a provided connection
+    /// 
+    /// Use `Window::set_geometry` and `Window::update_geometry`
+    /// to change window geometry instead of this method.
+    pub fn configure(&self, conn: &XConn, attrs: &[(u16, u32)]) {
+        conn.configure_window(self.id(), attrs);
+    }
+
+    /// Change window attributes.
+    pub fn change_attributes(&self, conn: &XConn, attrs: &[(u32, u32)]) {
+        conn.change_window_attributes(self.id(), attrs)
     }
 
     pub fn do_resize(&mut self, conn: &XConn, _scr: &Screen, dx: i32, dy: i32) {
@@ -273,7 +268,6 @@ pub struct Windows {
     focused: Option<XWindowID>,
 }
 
-#[allow(dead_code)]
 impl Windows {
     #[inline(always)]
     pub fn len(&self) -> usize {
@@ -326,7 +320,16 @@ impl Windows {
         None
     }
 
-    pub fn iter(&mut self) -> impl Iterator<Item = &Window> {
+    pub fn has(&self, id: XWindowID) -> bool {
+        for window in self.windows.iter() {
+            if window.id() == id {
+                return true
+            }
+        }
+        false
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &Window> {
         self.windows.iter()
     }
 
@@ -334,7 +337,7 @@ impl Windows {
         self.windows.iter_mut()
     }
 
-    pub fn iter_rev(&mut self) -> impl Iterator<Item = &Window> {
+    pub fn iter_rev(&self) -> impl Iterator<Item = &Window> {
         self.windows.iter().rev()
     }
 
