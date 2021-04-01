@@ -2,6 +2,7 @@ use std::ops::{Index, IndexMut};
 
 use crate::window::{Window, Windows, Screen};
 use crate::xserver::{XConn, XWindowID};
+use crate::values;
 
 use crate::layout::{self, *};
 
@@ -100,6 +101,7 @@ impl Workspace {
     }
 
     pub fn push_window(&mut self, window: Window) {
+        function_ends!("[start] workspace::push_window");
         if let LayoutType::Floating = self.layout {
             self.windows.push(window);
         } else if let None = self.master {
@@ -110,10 +112,13 @@ impl Workspace {
                 let window_id = window.id();
                 self.windows.push(window);
                 self.set_master(window_id);
+            } else {
+                self.windows.push(window);
             }
         } else {
             self.windows.insert(1, window);
         }
+        function_ends!("[end] workspace::push_window");
     }
 
     pub fn set_master(&mut self, master_id: XWindowID) {
@@ -197,6 +202,26 @@ impl Workspace {
         debug!("Current master is {:?}", self.master);
         dbg!(&self.windows);
         window
+    }
+
+    pub fn toggle_focused_state(&mut self, conn: &XConn, screen: &Screen) {
+        debug!("Toggling state of focused window {:?}", self.windows.focused());
+        let master = self.master;
+        if let Some(win) = self.windows.focused_mut() {
+            let mstr_id = win.id();
+            if win.is_floating() {
+                win.toggle_state();
+                win.configure(conn, &values::stack_above_sibling(0));
+                // if we have no master
+                if master.is_none() {
+                    self.set_master(mstr_id);
+                }
+            } else {
+                win.toggle_state();
+                win.configure(conn, &values::stack_above_sibling(0));
+            }
+        }
+        self.relayout(conn, screen);
     }
 
     pub fn take_focused_window(&mut self,

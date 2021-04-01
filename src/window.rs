@@ -126,6 +126,15 @@ impl Window {
         self.state = WindowState::Floating
     }
 
+    #[inline]
+    pub fn toggle_state(&mut self) {
+        if let WindowState::Floating = self.state {
+            self.state = WindowState::Tiled
+        } else if let WindowState::Tiled = self.state {
+            self.state = WindowState::Floating
+        }
+    }
+
     #[inline(always)]
     pub fn id(&self) -> XWindowID {
         self.xwindow.id
@@ -172,10 +181,10 @@ impl Window {
             self.y() as u32
         ));
 
-        debug!(
-            "Updated geometry:\nx: {}, y: {}, h: {}, w: {}", 
-            self.x(), self.y(), self.height(), self.width()
-        );
+        // debug!(
+        //     "Updated geometry:\nx: {}, y: {}, h: {}, w: {}", 
+        //     self.x(), self.y(), self.height(), self.width()
+        // );
     }
     
     /// Configure the window using a provided connection
@@ -211,10 +220,10 @@ impl Window {
             self.height() as u32
         ));
 
-        debug!(
-            "Updated geometry:\nx: {}, y: {}, h: {}, w: {}", 
-            self.x(), self.y(), self.height(), self.width()
-        );
+        // debug!(
+        //     "Updated geometry:\nx: {}, y: {}, h: {}, w: {}", 
+        //     self.x(), self.y(), self.height(), self.width()
+        // );
     }
 
     pub fn set_geometry(&mut self, geom: Geometry) {
@@ -362,6 +371,14 @@ impl Windows {
     pub fn focused(&self) -> Option<&Window> {
         if let Some(win) = self.focused {
             return self.lookup(win)
+        }
+
+        None
+    }
+
+    pub fn focused_mut(&mut self) -> Option<&mut Window> {
+        if let Some(win) = self.focused {
+            return self.lookup_mut(win)
         }
 
         None
