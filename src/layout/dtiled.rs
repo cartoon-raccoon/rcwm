@@ -126,8 +126,8 @@ pub fn window_focus(conn: &XConn, ws: &mut Workspace, window: XWindowID) {
 }
 
 pub fn relayout(conn: &XConn, ws: &mut Workspace, screen: &Screen) {
-    let root_geom = conn.get_root_geom().expect("Could not get root geom");
-    calculate_geoms(ws, screen, root_geom);
+    //let root_geom = conn.get_root_geom().expect("Could not get root geom");
+    calculate_geoms(ws, screen, screen.xwindow.geom);
     for win in ws.windows.iter_mut() {
         win.update_geometry(conn);
     }
