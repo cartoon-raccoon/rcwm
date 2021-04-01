@@ -232,12 +232,12 @@ impl<'a> XConn<'a> {
     }
 
     pub fn change_window_attributes(&self, window: XWindowID, attrs: &[(u32, u32)]) {
-        debug!("Changing attributes for window {}", window);
+        //debug!("Changing attributes for window {}", window);
         xcb::change_window_attributes(self.conn, window, attrs);
     }
 
     pub fn change_window_attributes_checked(&self, window: XWindowID, attrs: &[(u32, u32)]) -> Result<()> {
-        debug!("Changing window attributes");
+        //debug!("Changing window attributes");
         xcb::change_window_attributes_checked(self.conn, window, attrs).request_check()
             .with_context(|| String::from("Could not change window attributes"))
     }
