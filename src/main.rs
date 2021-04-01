@@ -9,6 +9,7 @@ mod desktop;
 mod workspace;
 mod layout;
 mod keys;
+mod types;
 
 use wm::WM;
 

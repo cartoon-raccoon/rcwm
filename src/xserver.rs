@@ -22,11 +22,16 @@ pub struct InternedAtoms {
 
     pub WM_PROTOCOLS: xcb::Atom,
 
-    pub WM_WINDOW_TYPE_NORMAL: xcb::Atom,
-    pub WM_WINDOW_TYPE_DIALOG: xcb::Atom,
+    pub WM_WINDOW_TYPE_DESKTOP: xcb::Atom,
+    pub WM_WINDOW_TYPE_DOCK: xcb::Atom,
     pub WM_WINDOW_TYPE_TOOLBAR: xcb::Atom,
+    pub WM_WINDOW_TYPE_MENU: xcb::Atom,
     pub WM_WINDOW_TYPE_UTILITY: xcb::Atom,
     pub WM_WINDOW_TYPE_SPLASH: xcb::Atom,
+    pub WM_WINDOW_TYPE_DIALOG: xcb::Atom,
+    pub WM_WINDOW_TYPE_DROPDOWN_MENU: xcb::Atom,
+    pub WM_WINDOW_TYPE_NOTIFICATION: xcb::Atom,
+    pub WM_WINDOW_TYPE_NORMAL: xcb::Atom,
     pub WM_STATE: xcb::Atom,
 }
 
@@ -62,12 +67,17 @@ impl InternedAtoms {
                 .atom(),
             
             WM_PROTOCOLS: conn.WM_PROTOCOLS(),
-
-            WM_WINDOW_TYPE_NORMAL: conn.WM_WINDOW_TYPE_NORMAL(),
-            WM_WINDOW_TYPE_DIALOG: conn.WM_WINDOW_TYPE_DIALOG(),
+            
+            WM_WINDOW_TYPE_DESKTOP: conn.WM_WINDOW_TYPE_DESKTOP(),
+            WM_WINDOW_TYPE_DOCK: conn.WM_WINDOW_TYPE_DOCK(),
             WM_WINDOW_TYPE_TOOLBAR: conn.WM_WINDOW_TYPE_TOOLBAR(),
+            WM_WINDOW_TYPE_MENU: conn.WM_WINDOW_TYPE_MENU(),
             WM_WINDOW_TYPE_UTILITY: conn.WM_WINDOW_TYPE_UTILITY(),
             WM_WINDOW_TYPE_SPLASH: conn.WM_WINDOW_TYPE_SPLASH(),
+            WM_WINDOW_TYPE_DIALOG: conn.WM_WINDOW_TYPE_DIALOG(),
+            WM_WINDOW_TYPE_DROPDOWN_MENU: conn.WM_WINDOW_TYPE_DROPDOWN_MENU(),
+            WM_WINDOW_TYPE_NOTIFICATION: conn.WM_WINDOW_TYPE_NOTIFICATION(),
+            WM_WINDOW_TYPE_NORMAL: conn.WM_WINDOW_TYPE_NORMAL(),
 
             WM_STATE: conn.WM_STATE(),
         }
