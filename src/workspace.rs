@@ -84,6 +84,15 @@ impl Workspace {
                 self._focus_window = floating::window_focus;
                 self._relayout = floating::relayout;
             }
+            LayoutType::DTiled => {
+                self.layout = layout;
+                self._activate = dtiled::activate;
+                self._deactivate = dtiled::deactivate;
+                self._add_window = dtiled::add_window;
+                self._del_window = dtiled::del_window;
+                self._focus_window = dtiled::window_focus;
+                self._relayout = dtiled::relayout;
+            }
             unhandled => {
                 error!("Layout type {:?} not supported", unhandled)
             }
@@ -94,22 +103,33 @@ impl Workspace {
         if let LayoutType::Floating = self.layout {
             self.windows.push(window);
         } else if let None = self.master {
-            if !self.windows.is_empty() {
-                warn!("Windows is not empty but workspace has a master")
+            if self.tiled_count() > 0 {
+                warn!("Windows not empty but workspace has no master")
             }
-            self.set_master(window.id());
-            self.windows.push(window);
+            if window.is_tiled() {
+                let window_id = window.id();
+                self.windows.push(window);
+                self.set_master(window_id);
+            }
         } else {
             self.windows.insert(1, window);
         }
-
     }
 
     pub fn set_master(&mut self, master_id: XWindowID) {
+        if !self.windows.has(master_id) {
+            error!("set_master: No such window {}", master_id);
+            return
+        }
         self.master = Some(master_id);
+        let idx = self.windows.contains(master_id).unwrap();
+        self.windows.move_front(idx);
     }
 
     pub fn unset_master(&mut self) {
+        if !self.windows.is_empty() {
+            error!("unset_master: Workspace is not empty");
+        }
         self.master = None;
     }
 
@@ -136,6 +156,14 @@ impl Workspace {
             return false
         }
         true
+    }
+
+    pub fn tiled_count(&self) -> usize {
+        self.windows.iter().filter(|win| win.is_tiled()).count()
+    }
+
+    pub fn floating_count(&self) -> usize {
+        self.windows.iter().filter(|win| win.is_floating()).count()
     }
 
     pub fn is_floating(&self) -> bool {
