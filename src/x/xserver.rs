@@ -4,9 +4,9 @@ use anyhow::{Context, Result};
 
 use std::ops::Index;
 
-use crate::window::{Geometry, Window};
+use crate::window::Window;
 use crate::values;
-use crate::types::{WindowState, SizeHints, XWinProperties};
+use crate::types::{WindowState, Geometry, SizeHints, XWinProperties};
 
 // #[derive(Clone, Copy, Debug)]
 // pub enum CursorIndex {

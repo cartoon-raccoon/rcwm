@@ -13,7 +13,7 @@ use crate::x::core::{
     XWindowID
 };
 use crate::values;
-use crate::types::WinLayoutState;
+use crate::types::{WinLayoutState, Geometry};
 use crate::desktop::Screen;
 
 pub const WIN_HEIGHT_MIN: i32 = 100;
@@ -25,25 +25,6 @@ fn ensure_in_bounds(val: &mut i32, min: i32, max: i32) {
         *val = min;
     } else if *val > max {
         *val = max;
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Geometry {
-    pub x: i32,
-    pub y: i32,
-    pub width: i32,
-    pub height: i32,
-}
-
-impl From<(i32, i32, i32, i32)> for Geometry {
-    fn from(from: (i32, i32, i32, i32)) -> Self {
-        Self {
-            x: from.0,
-            y: from.1,
-            width: from.2,
-            height: from.3,
-        }
     }
 }
 

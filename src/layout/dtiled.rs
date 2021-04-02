@@ -1,6 +1,7 @@
 use crate::x::core::{XConn, XWindowID};
 use crate::workspace::Workspace;
-use crate::window::{Window, Geometry};
+use crate::window::{Window};
+use crate::types::Geometry;
 use crate::desktop::Screen;
 use crate::values;
 
