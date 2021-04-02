@@ -296,6 +296,10 @@ impl Windows {
         self.windows.push_front(window)
     }
 
+    pub fn append(&mut self, window: Window) {
+        self.windows.push_back(window)
+    }
+
     pub fn pop(&mut self, idx: usize) -> Window {
         self.move_front(idx);
 

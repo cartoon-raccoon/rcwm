@@ -40,13 +40,13 @@ pub fn add_window(conn: &XConn, ws: &mut Workspace, screen: &Screen, window_id: 
     window.set_supported(conn);
 
     // Get root geometries
-    let root_geom = screen.xwindow.geom;
-    let root_geom2 = conn.get_root_geom().expect("Could not get root geometry");
+    let root_geom = conn.get_root_geom().expect("Could not get root geometry");
+    let root_geom2 = screen.xwindow.geom;
 
     if root_geom != root_geom2 {
         warn!("Stored geom and retrieved geom mismatch");
-        debug!("stored: {:?}", root_geom);
-        debug!("gotten: {:?}", root_geom2);
+        debug!("gotten: {:?}", root_geom);
+        debug!("stored: {:?}", root_geom2);
     }
 
     // Add new windows
@@ -54,7 +54,7 @@ pub fn add_window(conn: &XConn, ws: &mut Workspace, screen: &Screen, window_id: 
     // Else, set new window as the master
     if ws.master.is_some() {
         debug!("dtiled::add_window: Pre-existing master, inserting after");
-        ws.windows.insert(1, window);
+        ws.windows.append(window);
     } else {
         debug!("dtiled::add_window: No pre-existing master, pushing directly");
         ws.windows.push(window);
@@ -70,9 +70,11 @@ pub fn add_window(conn: &XConn, ws: &mut Workspace, screen: &Screen, window_id: 
             win.configure(conn, &[(xcb::CONFIG_WINDOW_BORDER_WIDTH as u16, BORDER_WIDTH)]);
 
             conn.map_window(win.id());
+            win.configure(conn, &values::stack_above());
             win.change_attributes(conn, &values::child_events());
         }
     }
+    window_focus(conn, ws, window_id);
 
     function_ends!("[end] dtiled::add_window");
 }
@@ -93,6 +95,7 @@ pub fn del_window(
     // disable events and unmap the window
     conn.change_window_attributes(window_id, &values::disable_events());
     conn.unmap_window(window_id);
+    ws.windows.unset_focused();
 
     // set new workspace master or unset it if empty
     if ws.is_master(window_id) {
@@ -126,8 +129,8 @@ pub fn window_focus(conn: &XConn, ws: &mut Workspace, window: XWindowID) {
 }
 
 pub fn relayout(conn: &XConn, ws: &mut Workspace, screen: &Screen) {
-    //let root_geom = conn.get_root_geom().expect("Could not get root geom");
-    calculate_geoms(ws, screen, screen.xwindow.geom);
+    let root_geom = conn.get_root_geom().expect("Could not get root geom");
+    calculate_geoms(ws, screen, root_geom);
     for win in ws.windows.iter_mut() {
         win.update_geometry(conn);
     }
@@ -139,8 +142,10 @@ fn calculate_geoms(ws: &mut Workspace, _screen: &Screen, root_geom: Geometry) {
 
     // Calculate the tile sizes
     if let Some(mstr) = ws.master() {
-        if ws.is_empty() {
-            error!("Workspace is empty but has a master window");
+        if ws.tiled_count() == 0 {
+            warn!("Workspace is empty but has a master window");
+            function_ends!("[end] dtiled::calculate_geoms");
+            ws.unset_master();
             return
         }
         // the window we are trying to map is a slave window

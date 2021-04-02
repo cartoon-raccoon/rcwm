@@ -116,7 +116,7 @@ impl Workspace {
                 self.windows.push(window);
             }
         } else {
-            self.windows.insert(1, window);
+            self.windows.append(window);
         }
         function_ends!("[end] workspace::push_window");
     }
