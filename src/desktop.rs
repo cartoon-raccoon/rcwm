@@ -74,6 +74,9 @@ impl Desktop {
     }
 
     pub fn goto(&mut self, conn: &XConn, scr: &Screen, idx: usize) {
+        if self.current == idx {
+            return
+        }
         debug!("Goto desktop {}", idx);
 
         self.workspaces.get_mut(self.current).unwrap().deactivate(conn);
