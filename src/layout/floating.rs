@@ -14,7 +14,7 @@ pub fn deactivate(conn: &XConn, ws: &mut Workspace) {
 }
 
 pub fn add_window(conn: &XConn, ws: &mut Workspace, screen: &Screen, window_id: XWindowID) {
-    let mut window = Window::floating(window_id);
+    let mut window = Window::floating(window_id, conn);
 
     window.set_supported(conn);
 

@@ -5,6 +5,8 @@ use std::collections::{
     HashSet, 
 };
 
+use xcb_util::icccm;
+
 use crate::xserver::{
     XConn,
     XWindow, 
@@ -63,6 +65,9 @@ impl Screen {
 pub struct Window {
     pub xwindow: XWindow,
     pub state: WinLayoutState,
+    pub name: String,
+    pub icon_name: String,
+    
     protocols: HashSet<xcb::Atom>,
 }
 
@@ -72,30 +77,24 @@ impl PartialEq for Window {
     }
 }
 
-impl From<XWindowID> for Window {
-    fn from(from: XWindowID) -> Self {
-        Self {
-            xwindow: XWindow::from(from),
-            state: WinLayoutState::Floating,
-            protocols: HashSet::new(),
-        }
-    }
-}
-
 //todo: fix your calculations, they are deeply broken.
 impl Window {
-    pub fn tiled(from: XWindowID) -> Self {
-        Self {
-            xwindow: XWindow::from(from),
-            state: WinLayoutState::Tiled,
-            protocols: HashSet::new(),
-        }
+    pub fn tiled(from: XWindowID, conn: &XConn) -> Self {
+        Self::new(from, conn, WinLayoutState::Tiled)
     }
 
-    pub fn floating(from: XWindowID) -> Self {
+    pub fn floating(from: XWindowID, conn: &XConn) -> Self {
+        Self::new(from, conn, WinLayoutState::Floating)
+    }
+
+    fn new(from: XWindowID, conn: &XConn, layout: WinLayoutState) -> Self {
+        let properties = conn.get_client_properties(from)
+            .expect("Failed to get properties");
         Self {
             xwindow: XWindow::from(from),
-            state: WinLayoutState::Floating,
+            state: layout,
+            name: properties.wm_name,
+            icon_name: properties.wm_icon_name,
             protocols: HashSet::new(),
         }
     }

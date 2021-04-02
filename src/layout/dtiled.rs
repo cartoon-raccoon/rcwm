@@ -36,7 +36,7 @@ pub fn deactivate(conn: &XConn, ws: &mut Workspace) {
 pub fn add_window(conn: &XConn, ws: &mut Workspace, screen: &Screen, window_id: XWindowID) {
     function_ends!("[start] dtiled::add_window");
     // Internally create a new window and set its supported protocols
-    let mut window = Window::tiled(window_id);
+    let mut window = Window::tiled(window_id, conn);
     window.set_supported(conn);
 
     // Get root geometries
