@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=rcwm
+Comment=rcwm session
+Exec=/home/sammy/Projects/rcwm/target/debug/rcwm
+Type=Application
+Keywords=wm;tiling
