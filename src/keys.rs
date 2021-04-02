@@ -1,3 +1,6 @@
+use std::thread;
+use std::process::Command;
+
 use x11::keysym;
 use xcb::xproto;
 
@@ -16,6 +19,9 @@ pub const KEYBINDS: &[Keybind] = &[
     (MODKEY|SHIFT, keysym::XK_2, |wm| {wm.send_window_to(1)}),
 
     (MODKEY, keysym::XK_t, |wm| {wm.desktop.current_mut().toggle_focused_state(&wm.conn, &wm.screen)}),
+
+    (MODKEY, keysym::XK_Return, |_| {run_external(&["alacritty"])}),
+    (MODKEY, keysym::XK_r, |_| {run_external(&["dmenu_run", "-b"])}),
 
     (MODKEY, keysym::XK_w, close_window),
 
@@ -39,6 +45,20 @@ pub fn close_window(wm: &mut WM) {
     }
 }
 
-// fn run_cb(args: &[&str]) {
+fn run_external(args: &'static [&str]) {
+    thread::spawn(move || {
+        debug!("Executing command {}", args[0]);
+        let mut cmd = Command::new(args[0]);
 
-// }
+        cmd.args(&args[1..]);
+
+        match cmd.status() {
+            Ok(status) => {
+                debug!("Command exited with status {}", status)
+            }
+            Err(e) => {
+                debug!("Error while executing command: {}", e)
+            }
+        }
+    });
+}
