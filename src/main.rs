@@ -1,8 +1,10 @@
+#![allow(unused_imports)]
+
 #[macro_use]
 mod log;
 
 mod wm;
-mod xserver;
+mod x;
 mod window;
 mod values;
 mod desktop;
@@ -10,6 +12,9 @@ mod workspace;
 mod layout;
 mod keys;
 mod types;
+
+#[macro_use]
+extern crate log as logger;
 
 use wm::WM;
 

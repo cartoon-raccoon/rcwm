@@ -1,7 +1,6 @@
 use crate::workspace::Workspace;
-use crate::xserver::XWindowID;
+use crate::x::core::{XWindowID, XConn};
 use crate::layout::LayoutType;
-use crate::xserver::XConn;
 use crate::window::Screen;
 
 pub const MAX_WKSPACES: usize = 10;

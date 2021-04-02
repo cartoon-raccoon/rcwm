@@ -1,4 +1,4 @@
-use crate::xserver::{XConn, XWindowID};
+use crate::x::core::{XConn, XWindowID};
 use crate::workspace::Workspace;
 use crate::window::{Window, Screen};
 use crate::values;

@@ -3,7 +3,7 @@
 use xcb_util::icccm::{self, WmState};
 
 use crate::layout::LayoutType;
-use crate::xserver::XConn;
+use crate::x::core::XConn;
 
 /// The ICCCM-defined window states.
 #[derive(Clone, Copy, Debug)]

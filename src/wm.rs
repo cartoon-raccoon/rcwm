@@ -4,7 +4,7 @@ use xcb_util::{
 };
 
 use crate::values;
-use crate::xserver::{XConn, XWindowID};
+use crate::x::core::{XConn, XWindowID};
 use crate::window::{Screen};
 use crate::desktop::Desktop;
 use crate::layout::LayoutType;
@@ -23,7 +23,6 @@ pub struct WM<'a> {
     pub desktop: Desktop,
     pub screen: Screen,
     root: i32,
-    layout: LayoutType,
     mousemode: MouseMode,
     selected: Option<XWindowID>,
     last_mouse_x: i32,
@@ -76,7 +75,6 @@ impl<'a> WM<'a> {
             desktop: Desktop::new(LayoutType::DTiled),
             screen: screen,
             root: screen_idx,
-            layout: LayoutType::DTiled,
             mousemode: MouseMode::None,
             selected: None,
             last_mouse_x: 0,
@@ -171,9 +169,12 @@ impl<'a> WM<'a> {
             let is_tiling = ws.is_tiling();
             let ref mut window = ws[idx];
 
+            // if we are tiling the window
             if is_tiling && window.is_tiled() {
                 // reject the request
                 debug!("Workspace is tiling, rejecting request");
+                // send back unchanged geometry
+                window.update_geometry(&self.conn);
                 return
             }
             

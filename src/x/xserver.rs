@@ -1,4 +1,4 @@
-use xcb_util::{ewmh, icccm, cursor};
+use xcb_util::{ewmh, cursor};
 use xcb_util::keysyms::KeySymbols;
 use anyhow::{Context, Result};
 
@@ -6,6 +6,7 @@ use std::ops::Index;
 
 use crate::window::{Geometry, Window};
 use crate::values;
+use crate::types::{WindowState, SizeHints, XWinProperties};
 
 // #[derive(Clone, Copy, Debug)]
 // pub enum CursorIndex {
@@ -223,14 +224,6 @@ impl<'a> XConn<'a> {
         xcb::get_window_attributes(self.conn, window).get_reply().ok()
     }
 
-    pub fn get_window_type(&self, window: XWindowID) -> Option<Vec<xcb::Atom>> {
-        debug!("Getting type for window {}", window);
-
-        ewmh::get_wm_window_type(self.conn, window)
-        .get_reply().ok()
-        .map(|ok| ok.atoms().to_owned())
-    }
-
     pub fn change_window_attributes(&self, window: XWindowID, attrs: &[(u32, u32)]) {
         //debug!("Changing attributes for window {}", window);
         xcb::change_window_attributes(self.conn, window, attrs);
@@ -316,23 +309,6 @@ impl<'a> XConn<'a> {
         debug!("Setting focus for window {}", window_id);
 
         xcb::set_input_focus(self.conn, xcb::INPUT_FOCUS_POINTER_ROOT as u8, window_id, xcb::CURRENT_TIME);
-    }
-
-    pub fn get_wm_protocols(&self, window: XWindowID) -> Option<Vec<xcb::Atom>> {
-        debug!("Getting protocols for window {}", window);
-        match icccm::get_wm_protocols(self.conn, window, self.atoms.WM_PROTOCOLS)
-        .get_reply() {
-            Ok(reply) => {
-                Some(reply.atoms().to_owned())
-            }
-            Err(_e) => {
-                None
-            }
-        }
-    }
-
-    pub fn set_supported(&self, screen_idx: i32, atoms: &[xcb::Atom]) {
-        ewmh::set_supported(self.conn, screen_idx, atoms);
     }
 
     pub fn get_geometry(&self, window_id: XWindowID) -> Result<Geometry> {

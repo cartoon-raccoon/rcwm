@@ -7,7 +7,7 @@ use std::collections::{
 
 use xcb_util::icccm;
 
-use crate::xserver::{
+use crate::x::core::{
     XConn,
     XWindow, 
     XWindowID
