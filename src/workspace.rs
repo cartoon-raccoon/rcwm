@@ -1,6 +1,7 @@
 use std::ops::{Index, IndexMut};
 
-use crate::window::{Window, Windows, Screen};
+use crate::window::{Window, Windows};
+use crate::desktop::Screen;
 use crate::x::core::{XConn, XWindowID};
 use crate::values;
 

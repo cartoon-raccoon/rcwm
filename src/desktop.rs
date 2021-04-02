@@ -1,7 +1,7 @@
 use crate::workspace::Workspace;
 use crate::x::core::{XWindowID, XConn};
 use crate::layout::LayoutType;
-use crate::window::Screen;
+use crate::x::XWindow;
 
 pub const MAX_WKSPACES: usize = 10;
 
@@ -9,6 +9,21 @@ pub const MAX_WKSPACES: usize = 10;
 pub struct Desktop {
     workspaces: Vec<Workspace>,
     current: usize,
+}
+
+#[derive(Clone, Copy)]
+pub struct Screen {
+    pub xwindow: XWindow,
+    pub idx: i32,
+}
+
+impl Screen {
+    pub fn new(screen_idx: i32, root_id: XWindowID) -> Self {
+        Self {
+            xwindow: XWindow::from(root_id),
+            idx: screen_idx,
+        }
+    }
 }
 
 #[allow(dead_code)]

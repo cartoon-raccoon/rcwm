@@ -1,6 +1,7 @@
 use crate::x::core::{XConn, XWindowID};
 use crate::workspace::Workspace;
-use crate::window::{Window, Screen};
+use crate::window::{Window};
+use crate::desktop::Screen;
 use crate::values;
 
 use super::{set_unfocus_colour, BORDER_WIDTH};

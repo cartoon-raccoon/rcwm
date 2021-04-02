@@ -14,6 +14,7 @@ use crate::x::core::{
 };
 use crate::values;
 use crate::types::WinLayoutState;
+use crate::desktop::Screen;
 
 pub const WIN_HEIGHT_MIN: i32 = 100;
 pub const WIN_WIDTH_MIN: i32 = 100;
@@ -42,21 +43,6 @@ impl From<(i32, i32, i32, i32)> for Geometry {
             y: from.1,
             width: from.2,
             height: from.3,
-        }
-    }
-}
-
-#[derive(Clone, Copy)]
-pub struct Screen {
-    pub xwindow: XWindow,
-    pub idx: i32,
-}
-
-impl Screen {
-    pub fn new(screen_idx: i32, root_id: XWindowID) -> Self {
-        Self {
-            xwindow: XWindow::from(root_id),
-            idx: screen_idx,
         }
     }
 }

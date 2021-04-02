@@ -1,9 +1,9 @@
 pub mod floating;
 pub mod dtiled;
 
-use crate::xserver::{XConn, XWindowID};
+use crate::x::core::{XConn, XWindowID};
 use crate::workspace::Workspace;
-use crate::window::Screen;
+use crate::desktop::Screen;
 use crate::values;
 
 pub const BORDER_WIDTH: u32 = 2;
@@ -35,7 +35,7 @@ fn window_stack_and_focus(_ws: &mut Workspace, conn: &XConn, window: XWindowID) 
     // if there is a focused window, stack it above
     // if let Some(win) = ws.windows.focused() {
     //     debug!("Focusing window {}", win.id());
-    //     conn.configure_window(window, &values::stack_above_sibling(win.id()));
+    //     conn.configure_window(window, &values::stack_above(win.id()));
     // }
 
     // focus to current window
