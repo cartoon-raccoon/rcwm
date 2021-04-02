@@ -132,8 +132,8 @@ impl Workspace {
     }
 
     pub fn unset_master(&mut self) {
-        if !self.windows.is_empty() {
-            error!("unset_master: Workspace is not empty");
+        if self.tiled_count() > 0 {
+            error!("unset_master: Workspace still has tiled windows");
         }
         self.master = None;
     }
@@ -209,16 +209,24 @@ impl Workspace {
         let master = self.master;
         if let Some(win) = self.windows.focused_mut() {
             let mstr_id = win.id();
-            if win.is_floating() {
+            if win.is_floating() { //toggling to tiled
+                debug!("Toggling window to tiled");
                 win.toggle_state();
                 win.configure(conn, &values::stack_above_sibling(0));
                 // if we have no master
                 if master.is_none() {
+                    debug!("No master, setting master");
                     self.set_master(mstr_id);
                 }
-            } else {
+            } else { //toggling to floating
+                debug!("Toggling window to floating");
                 win.toggle_state();
                 win.configure(conn, &values::stack_above_sibling(0));
+
+                if self.tiled_count() == 0 && self.master.is_some() {
+                    debug!("All windows are floating, unsetting master");
+                    self.unset_master();
+                }
             }
         }
         self.relayout(conn, screen);
