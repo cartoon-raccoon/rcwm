@@ -20,8 +20,8 @@ pub fn add_window(conn: &XConn, ws: &mut Workspace, screen: &Screen, window_id: 
 
     conn.map_window(window.id());
 
-    if let Some(focused) = ws.windows.focused() {
-        conn.configure_window(window_id, &values::stack_above_sibling(focused.id()));
+    if let Some(_focused) = ws.windows.focused() {
+        conn.configure_window(window_id, &values::stack_above());
     }
     conn.configure_window(window.id(), &[(xcb::CONFIG_WINDOW_BORDER_WIDTH as u16, BORDER_WIDTH)]);
 

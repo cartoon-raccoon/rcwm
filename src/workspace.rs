@@ -212,7 +212,7 @@ impl Workspace {
             if win.is_floating() { //toggling to tiled
                 debug!("Toggling window to tiled");
                 win.toggle_state();
-                win.configure(conn, &values::stack_above_sibling(0));
+                win.configure(conn, &values::stack_above());
                 // if we have no master
                 if master.is_none() {
                     debug!("No master, setting master");
@@ -221,7 +221,7 @@ impl Workspace {
             } else { //toggling to floating
                 debug!("Toggling window to floating");
                 win.toggle_state();
-                win.configure(conn, &values::stack_above_sibling(0));
+                win.configure(conn, &values::stack_above());
 
                 if self.tiled_count() == 0 && self.master.is_some() {
                     debug!("All windows are floating, unsetting master");

@@ -326,7 +326,7 @@ impl<'a> WM<'a> {
             self.desktop.current_mut().focus_window(&self.conn, &self.screen, selected);
             // stack the window on top
             self.desktop.current_mut().windows.focused().unwrap()
-                .configure(&self.conn, &values::stack_above_sibling(0));
+                .configure(&self.conn, &values::stack_above());
             debug!("On motion notify");
 
             let dx = event.root_x() as i32 - self.last_mouse_x;
