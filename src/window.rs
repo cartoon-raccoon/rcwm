@@ -11,7 +11,7 @@ use crate::xserver::{
     XWindowID
 };
 use crate::values;
-use crate::types::WindowState;
+use crate::types::WinLayoutState;
 
 pub const WIN_HEIGHT_MIN: i32 = 100;
 pub const WIN_WIDTH_MIN: i32 = 100;
@@ -62,7 +62,7 @@ impl Screen {
 #[derive(Debug, Clone)]
 pub struct Window {
     pub xwindow: XWindow,
-    pub state: WindowState,
+    pub state: WinLayoutState,
     protocols: HashSet<xcb::Atom>,
 }
 
@@ -76,7 +76,7 @@ impl From<XWindowID> for Window {
     fn from(from: XWindowID) -> Self {
         Self {
             xwindow: XWindow::from(from),
-            state: WindowState::Floating,
+            state: WinLayoutState::Floating,
             protocols: HashSet::new(),
         }
     }
@@ -87,7 +87,7 @@ impl Window {
     pub fn tiled(from: XWindowID) -> Self {
         Self {
             xwindow: XWindow::from(from),
-            state: WindowState::Tiled,
+            state: WinLayoutState::Tiled,
             protocols: HashSet::new(),
         }
     }
@@ -95,14 +95,14 @@ impl Window {
     pub fn floating(from: XWindowID) -> Self {
         Self {
             xwindow: XWindow::from(from),
-            state: WindowState::Floating,
+            state: WinLayoutState::Floating,
             protocols: HashSet::new(),
         }
     }
 
     #[inline]
     pub fn is_tiled(&self) -> bool {
-        if let WindowState::Tiled = self.state {
+        if let WinLayoutState::Tiled = self.state {
             return true
         }
         false
@@ -110,7 +110,7 @@ impl Window {
 
     #[inline]
     pub fn is_floating(&self) -> bool {
-        if let WindowState::Floating = self.state {
+        if let WinLayoutState::Floating = self.state {
             return true
         }
         false
@@ -118,20 +118,20 @@ impl Window {
 
     #[inline]
     pub fn set_tiled(&mut self) {
-        self.state = WindowState::Tiled
+        self.state = WinLayoutState::Tiled
     }
 
     #[inline]
     pub fn set_floating(&mut self) {
-        self.state = WindowState::Floating
+        self.state = WinLayoutState::Floating
     }
 
     #[inline]
     pub fn toggle_state(&mut self) {
-        if let WindowState::Floating = self.state {
-            self.state = WindowState::Tiled
-        } else if let WindowState::Tiled = self.state {
-            self.state = WindowState::Floating
+        if let WinLayoutState::Floating = self.state {
+            self.state = WinLayoutState::Tiled
+        } else if let WinLayoutState::Tiled = self.state {
+            self.state = WinLayoutState::Floating
         }
     }
 

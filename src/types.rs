@@ -4,15 +4,15 @@ use crate::layout::LayoutType;
 use crate::xserver::XConn;
 
 #[derive(Clone, Copy, Debug)]
-pub enum WindowState {
+pub enum WinLayoutState {
     Tiled,
     Floating,
 }
 
-impl From<LayoutType> for WindowState {
+impl From<LayoutType> for WinLayoutState {
 
     #[inline]
-    fn from(from: LayoutType) -> WindowState {
+    fn from(from: LayoutType) -> WinLayoutState {
         if let LayoutType::Floating = from {
             return Self::Floating
         }
