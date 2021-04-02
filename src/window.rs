@@ -88,8 +88,7 @@ impl Window {
     }
 
     fn new(from: XWindowID, conn: &XConn, layout: WinLayoutState) -> Self {
-        let properties = conn.get_client_properties(from)
-            .expect("Failed to get properties");
+        let properties = conn.get_client_properties(from);
         Self {
             xwindow: XWindow::from(from),
             state: layout,

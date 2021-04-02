@@ -24,6 +24,12 @@ impl From<WmState> for WindowState {
     }
 }
 
+impl Default for WindowState {
+    fn default() -> Self {
+        Self::Normal
+    }
+}
+
 #[derive(Clone, Copy, Debug)]
 pub enum WinLayoutState {
     Tiled,
@@ -106,9 +112,9 @@ pub struct SizeHints {
 pub struct XWinProperties {
     pub wm_name: String,
     pub wm_icon_name: String,
-    pub wm_size_hints: icccm::SizeHints,
-    pub wm_hints: icccm::WmHints,
+    pub wm_size_hints: Option<icccm::SizeHints>,
+    pub wm_hints: Option<icccm::WmHints>,
     pub wm_class: (String, String), //Instance, Class
-    pub wm_protocols: Vec<xcb::Atom>,
+    pub wm_protocols: Option<Vec<xcb::Atom>>,
     pub wm_state: WindowState,
 }
