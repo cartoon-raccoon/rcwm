@@ -1,6 +1,6 @@
 use crate::x::core::{XConn, XWindowID};
 use crate::workspace::Workspace;
-use crate::window::{Window};
+use crate::window::Client;
 use crate::desktop::Screen;
 use crate::values;
 
@@ -15,7 +15,7 @@ pub fn deactivate(conn: &XConn, ws: &mut Workspace) {
 }
 
 pub fn add_window(conn: &XConn, ws: &mut Workspace, screen: &Screen, window_id: XWindowID) {
-    let mut window = Window::floating(window_id, conn);
+    let mut window = Client::floating(window_id, conn);
 
     window.set_supported(conn);
 
@@ -59,7 +59,7 @@ pub fn del_window(
     _screen: &Screen, 
     window_id: XWindowID,
     idx: usize
-) ->  Window {
+) ->  Client {
     let window = ws.windows.pop(idx);
 
     conn.change_window_attributes(window_id, &values::disable_events());

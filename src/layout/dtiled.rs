@@ -1,6 +1,6 @@
 use crate::x::core::{XConn, XWindowID};
 use crate::workspace::Workspace;
-use crate::window::{Window};
+use crate::window::Client;
 use crate::types::Geometry;
 use crate::desktop::Screen;
 use crate::values;
@@ -38,7 +38,7 @@ pub fn deactivate(conn: &XConn, ws: &mut Workspace) {
 pub fn add_window(conn: &XConn, ws: &mut Workspace, screen: &Screen, window_id: XWindowID) {
     function_ends!("[start] dtiled::add_window");
     // Internally create a new window and set its supported protocols
-    let mut window = Window::tiled(window_id, conn);
+    let mut window = Client::tiled(window_id, conn);
     window.set_supported(conn);
 
     // Get root geometries
@@ -87,7 +87,7 @@ pub fn del_window(
     screen: &Screen,
     window_id: XWindowID,
     idx: usize
-) -> Window {
+) -> Client {
     function_ends!("[start] dtiled::del_window");
     debug!("Got window with idx {}", idx);
 

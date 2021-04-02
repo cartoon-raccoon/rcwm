@@ -1,6 +1,6 @@
 use std::ops::{Index, IndexMut};
 
-use crate::window::{Window, Windows};
+use crate::window::{Client, Windows};
 use crate::desktop::Screen;
 use crate::x::core::{XConn, XWindowID};
 use crate::values;
@@ -16,7 +16,7 @@ pub struct Workspace {
     pub _activate: fn(&XConn, &mut Workspace, &Screen),
     pub _deactivate: fn(&XConn, &mut Workspace),
     pub _add_window: fn(&XConn, &mut Workspace, &Screen, XWindowID),
-    pub _del_window: fn(&XConn, &mut Workspace, &Screen, XWindowID, usize) -> Window,
+    pub _del_window: fn(&XConn, &mut Workspace, &Screen, XWindowID, usize) -> Client,
     pub _focus_window: fn(&XConn, &mut Workspace, XWindowID),
     pub _relayout: fn(&XConn, &mut Workspace, &Screen),
     // pub _cycle_focus: fn(&XConn, &mut Workspace),
@@ -101,7 +101,7 @@ impl Workspace {
         }
     }
 
-    pub fn push_window(&mut self, window: Window) {
+    pub fn push_window(&mut self, window: Client) {
         function_ends!("[start] workspace::push_window");
         if let LayoutType::Floating = self.layout {
             self.windows.push(window);
@@ -198,7 +198,7 @@ impl Workspace {
         screen: &Screen, 
         id: XWindowID, 
         idx: usize
-    ) -> Window {
+    ) -> Client {
         let window = (self._del_window)(conn, self, screen, id, idx);
         debug!("Current master is {:?}", self.master);
         dbg!(&self.windows);
@@ -236,7 +236,7 @@ impl Workspace {
     pub fn take_focused_window(&mut self,
         conn: &XConn,
         screen: &Screen,
-    ) -> Option<Window> {
+    ) -> Option<Client> {
         if let Some(window) = self.windows.focused() {
             let idx = self.windows.contains(window.id()).unwrap();
             let window = window.to_owned();
@@ -264,15 +264,15 @@ impl Workspace {
 }
 
 impl Index<usize> for Workspace {
-    type Output = Window;
+    type Output = Client;
 
-    fn index(&self, idx: usize) -> &Window {
+    fn index(&self, idx: usize) -> &Client {
         &self.windows[idx]
     }
 }
 
 impl IndexMut<usize> for Workspace {
-    fn index_mut(&mut self, idx: usize) -> &mut Window {
+    fn index_mut(&mut self, idx: usize) -> &mut Client {
         &mut self.windows[idx]
     }
 }

@@ -4,7 +4,7 @@ use anyhow::{Context, Result};
 
 use std::ops::Index;
 
-use crate::window::Window;
+use crate::window::Client;
 use crate::values;
 use crate::types::{WindowState, Geometry, SizeHints, XWinProperties};
 
@@ -278,7 +278,7 @@ impl<'a> XConn<'a> {
         }
     }
 
-    pub fn destroy_window(&self, window: &Window) {
+    pub fn destroy_window(&self, window: &Client) {
         debug!("Destroying window {}", window.id());
         if window.supports(self.atoms.WM_DELETE_WINDOW) {
             debug!("Destroying window via ICCCM WM_DELETE_WINDOW");
