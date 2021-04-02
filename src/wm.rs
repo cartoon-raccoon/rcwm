@@ -122,11 +122,13 @@ impl<'a> WM<'a> {
                     xcb::UNMAP_NOTIFY => self.on_unmap_notify(xcb::cast_event(&event)),
                     xcb::DESTROY_NOTIFY => self.on_destroy_notify(xcb::cast_event(&event)),
                     xcb::ENTER_NOTIFY => self.on_enter_notify(xcb::cast_event(&event)),
+                    xcb::LEAVE_NOTIFY => {debug!("Leave notify")}
                     xcb::MOTION_NOTIFY => self.on_motion_notify(xcb::cast_event(&event)),
                     xcb::REPARENT_NOTIFY => {debug!("Reparent notify")}
                     xcb::KEY_PRESS => self.on_key_press(xcb::cast_event(&event)),
                     xcb::BUTTON_PRESS => self.on_button_press(xcb::cast_event(&event)),
                     xcb::BUTTON_RELEASE => self.on_button_release(xcb::cast_event(&event)),
+                    xcb::CLIENT_MESSAGE => {debug!("Client message")}
                     unhandled => {
                         debug!("Unhandled event {}", unhandled);
                     }
@@ -152,10 +154,10 @@ impl<'a> WM<'a> {
         if event.window() == self.screen.xwindow.id {
             debug!("On configure notify for root window");
 
-            self.screen.xwindow.update_pos_x(event.x() as i32);
-            self.screen.xwindow.update_pos_y(event.y() as i32);
-            self.screen.xwindow.update_width(event.width() as i32);
-            self.screen.xwindow.update_height(event.height() as i32);
+            self.screen.xwindow.geom.x = event.x() as i32;
+            self.screen.xwindow.geom.y = event.y() as i32;
+            self.screen.xwindow.geom.width = event.width() as i32;
+            self.screen.xwindow.geom.height = event.height() as i32;
 
             self.desktop.current_mut().deactivate(&self.conn);
             self.desktop.current_mut().activate(&self.conn, &self.screen);
@@ -166,8 +168,15 @@ impl<'a> WM<'a> {
         if let Some((ws, idx)) = self.desktop.contains_mut(event.window()) {
             debug!("On configure request for window {}", event.window());
 
+            let is_tiling = ws.is_tiling();
             let ref mut window = ws[idx];
 
+            if is_tiling && window.is_tiled() {
+                // reject the request
+                debug!("Workspace is tiling, rejecting request");
+                return
+            }
+            
             let mut values = Vec::new();
 
             if xcb::CONFIG_WINDOW_Y as u16 & event.value_mask() != 0 {
@@ -188,6 +197,7 @@ impl<'a> WM<'a> {
             }
 
             self.conn.configure_window(event.window(), &values);
+            dbg!(window);
         }
     }
 
