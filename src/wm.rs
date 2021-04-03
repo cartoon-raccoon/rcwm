@@ -5,6 +5,7 @@ use xcb_util::{
 
 use crate::values;
 use crate::x::core::{XConn, XWindowID};
+use crate::x::Ewmh;
 use crate::desktop::{Desktop, Screen};
 use crate::layout::LayoutType;
 use crate::keys;

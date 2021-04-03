@@ -12,6 +12,7 @@ use crate::x::core::{
     XWindow, 
     XWindowID
 };
+use crate::x::Icccm;
 use crate::values;
 use crate::types::{WinLayoutState, Geometry};
 use crate::desktop::Screen;
