@@ -83,6 +83,7 @@ pub fn del_window(
 pub fn window_focus(conn: &XConn, ws: &mut Workspace, window: XWindowID) {
 
     if let Some(idx) = ws.windows.contains(window) {
+        debug!("Found window {}", window);
         if let Some(focused) = ws.windows.focused() {
             set_unfocus_colour(conn, focused.id());
         }

@@ -111,8 +111,24 @@ pub fn del_window(
             let new_master = ws.windows.get(0).unwrap().id();
             debug!("New master is now {}", new_master);
             ws.set_master(new_master);
-            debug!("Window at idx 0 is {:?}", ws.windows.get(0));
+            debug!("Window at idx 0 is {:#?}", ws.windows.get(0));
             window_focus(conn, ws, new_master);
+        }
+    } else {
+        // only master is left
+        if ws.tiled_count() == 1 {
+            let master = ws.master.unwrap();
+            window_focus(conn, ws, master);        
+        } else {
+            if !ws.is_empty() {
+                assert!(ws.tiled_count() > 1);
+                //todo: add last focused so we can focus to that
+                // placeholder code to focus to master by default
+                let master = ws.master.unwrap();
+                window_focus(conn, ws, master);
+            } else {
+                ws.windows.unset_focused();
+            }
         }
     }
 
@@ -160,7 +176,15 @@ fn calculate_geoms(ws: &mut Workspace, _screen: &Screen, root_geom: Geometry) {
             // and we are mapping the master window
             let master = ws.windows.lookup_mut(mstr).unwrap();
 
-            master.set_geometry(root_geom);
+            //account for window border
+            let master_geom = Geometry {
+                x: root_geom.x,
+                y: root_geom.y,
+                height: root_geom.height - (BORDER_WIDTH as i32 * 2),
+                width: root_geom.width - (BORDER_WIDTH as i32 * 2),
+            };
+
+            master.set_geometry(master_geom);
 
         } else if ws.tiled_count() == 2 {
             debug!("dtiled::calculate_geoms: 1 master + 1 slave, mapping half-half");
@@ -174,7 +198,10 @@ fn calculate_geoms(ws: &mut Workspace, _screen: &Screen, root_geom: Geometry) {
 
             // cut the master in half
             let mut master_geom = root_geom;
-            master_geom.width = (master_geom.width / 2) - BORDER_WIDTH as i32;
+            master_geom.height = root_geom.height - (BORDER_WIDTH as i32 * 2);
+            master_geom.width = (
+                (root_geom.width - BORDER_WIDTH as i32 * 2) / 2
+            ) - BORDER_WIDTH as i32;
             
             // set its geometry
             master.set_geometry(master_geom);
@@ -183,7 +210,7 @@ fn calculate_geoms(ws: &mut Workspace, _screen: &Screen, root_geom: Geometry) {
 
             // get its xy coords
             let (slave_x, slave_y) = {
-                let left_corner = master_geom.x + master_geom.width;
+                let left_corner = master_geom.x + master_geom.width + (BORDER_WIDTH as i32 *2);
                 // todo: using 0 will not work when incorporating gaps and bars
                 (left_corner, 0)
             };
@@ -221,8 +248,12 @@ fn calculate_geoms(ws: &mut Workspace, _screen: &Screen, root_geom: Geometry) {
             if master_geom.x != 0 || master_geom.y != 0 {
                 debug!("Master is not in position");
 
-                master_geom = root_geom;
-                master_geom.width = (master_geom.width / 2) - BORDER_WIDTH as i32;
+                master_geom.x = root_geom.x;
+                master_geom.y = root_geom.y;
+                master_geom.height = root_geom.height - (BORDER_WIDTH as i32 * 2);
+                master_geom.width = (
+                    (root_geom.width - BORDER_WIDTH as i32 * 2) / 2
+                ) - BORDER_WIDTH as i32;
 
                 master.set_geometry(master_geom);
             }
@@ -231,16 +262,18 @@ fn calculate_geoms(ws: &mut Workspace, _screen: &Screen, root_geom: Geometry) {
             let slave_count = if ws.tiled_count() == 0 { 0 } else { ws.tiled_count() - 1 };
 
             // calculate new height of all slave windows
-            let slave_height = root_geom.height / slave_count as i32;
-            let slave_width = root_geom.width - master_geom.width;
+            let slave_height = (root_geom.height / slave_count as i32) - (BORDER_WIDTH as i32 * 2);
+            let slave_width = master_geom.width;
 
             // for each window that is not a master
             for (i, win) in ws.windows.iter_mut()
                 .filter(|win| win.id() != mstr && win.is_tiled())
                 .enumerate() {
                 // calculate coords
-                let y = i as i32 * slave_height;
-                let x = master_geom.width;
+                let y = i as i32 * slave_height + if i == 0 { 0 } else {
+                    (BORDER_WIDTH as i32 * 2) * i as i32
+                };
+                let x = master_geom.width + (BORDER_WIDTH as i32 * 2);
 
                 let slave_geom = Geometry {
                     x: x,
