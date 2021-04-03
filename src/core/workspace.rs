@@ -1,7 +1,7 @@
 use std::ops::{Index, IndexMut};
 
 use crate::window::Client;
-use crate::core::Ring;
+use crate::core::ClientRing;
 use crate::desktop::Screen;
 use crate::x::core::{XConn, XWindowID};
 use crate::values;
@@ -10,7 +10,7 @@ use crate::layout::{self, *};
 
 #[derive(Clone)]
 pub struct Workspace {
-    pub(crate) windows: Ring,
+    pub(crate) windows: ClientRing,
     pub(crate) master: Option<XWindowID>,
     pub(crate) layout: LayoutType,
 
@@ -26,7 +26,7 @@ pub struct Workspace {
 impl Default for Workspace {
     fn default() -> Self {
         Self {
-            windows: Ring::default(),
+            windows: ClientRing::new(),
             master: None,
             layout: LayoutType::DTiled,
 
@@ -45,7 +45,7 @@ impl Workspace {
     pub fn with_layout(layout: LayoutType) -> Self {
         match layout {
             LayoutType::Floating => Self {
-                windows: Ring::default(),
+                windows: ClientRing::new(),
                 master: None,
                 layout: layout,
     
@@ -57,7 +57,7 @@ impl Workspace {
                 _relayout: floating::relayout,
             },
             LayoutType::DTiled => Self {
-                windows: Ring::default(),
+                windows: ClientRing::new(),
                 master: None,
                 layout: layout,
 
