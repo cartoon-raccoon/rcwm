@@ -40,7 +40,6 @@ impl Default for Workspace {
     }
 }
 
-#[allow(dead_code)]
 impl Workspace {
     pub fn with_layout(layout: LayoutType) -> Self {
         match layout {

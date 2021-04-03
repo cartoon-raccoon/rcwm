@@ -1,11 +1,8 @@
-#![allow(dead_code)]
 use std::ops::{Index, IndexMut};
 use std::collections::{
     VecDeque, 
     HashSet, 
 };
-
-use xcb_util::icccm;
 
 use crate::x::core::{
     XConn,
@@ -21,6 +18,7 @@ pub const WIN_HEIGHT_MIN: i32 = 100;
 pub const WIN_WIDTH_MIN: i32 = 100;
 pub const MIN_ONSCREEN: i32 = 20;
 
+#[allow(dead_code)]
 fn ensure_in_bounds(val: &mut i32, min: i32, max: i32) {
     if *val < min {
         *val = min;

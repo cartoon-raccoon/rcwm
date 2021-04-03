@@ -9,7 +9,6 @@ use crate::values;
 pub const BORDER_WIDTH: u32 = 2;
 
 #[non_exhaustive]
-#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum LayoutType {
     /// All-floating layout.

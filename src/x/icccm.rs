@@ -3,7 +3,6 @@
 //! Currently implemented by XConn.
 
 use xcb_util::icccm;
-use anyhow::Result;
 
 use crate::x::{XConn, XWindowID};
 use crate::types::{XWinProperties, WindowState};
@@ -18,7 +17,6 @@ pub trait Icccm {
     fn get_wm_state(&self, window: XWindowID) -> WindowState;
 }
 
-#[allow(dead_code)]
 impl<'a> Icccm for XConn<'a> {
     fn get_client_properties(&self, window: XWindowID) -> XWinProperties {
         debug!("Getting client properties for window {}", window);

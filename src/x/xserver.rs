@@ -6,7 +6,7 @@ use std::ops::Index;
 
 use crate::window::Client;
 use crate::values;
-use crate::types::{WindowState, Geometry, SizeHints, XWinProperties};
+use crate::types::Geometry;
 
 // #[derive(Clone, Copy, Debug)]
 // pub enum CursorIndex {
