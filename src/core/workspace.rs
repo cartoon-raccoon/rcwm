@@ -2,6 +2,7 @@ use std::ops::{Index, IndexMut};
 
 use crate::window::Client;
 use crate::core::ClientRing;
+use crate::types::Direction;
 use crate::desktop::Screen;
 use crate::x::core::{XConn, XWindowID};
 use crate::values;
@@ -20,7 +21,7 @@ pub struct Workspace {
     pub _del_window: fn(&XConn, &mut Workspace, &Screen, XWindowID, usize) -> Client,
     pub _focus_window: fn(&XConn, &mut Workspace, XWindowID),
     pub _relayout: fn(&XConn, &mut Workspace, &Screen),
-    // pub _cycle_focus: fn(&XConn, &mut Workspace),
+    pub _cycle_focus: fn(&XConn, &mut Workspace, Direction),
 }
 
 impl Default for Workspace {
@@ -36,7 +37,7 @@ impl Default for Workspace {
             _del_window: dtiled::del_window,
             _focus_window: dtiled::window_focus,
             _relayout: dtiled::relayout,
-            // _cycle_focus
+            _cycle_focus: dtiled::cycle_focus,
         }
     }
 }
@@ -55,6 +56,7 @@ impl Workspace {
                 _del_window: floating::del_window,
                 _focus_window: floating::window_focus,
                 _relayout: floating::relayout,
+                _cycle_focus: floating::cycle_focus,
             },
             LayoutType::DTiled => Self {
                 windows: ClientRing::new(),
@@ -67,6 +69,7 @@ impl Workspace {
                 _del_window: dtiled::del_window,
                 _focus_window: dtiled::window_focus,
                 _relayout: dtiled::relayout,
+                _cycle_focus: dtiled::cycle_focus,
             },
             unhandled => {
                 error!("Layout type {:?} not supported", unhandled);
@@ -271,6 +274,10 @@ impl Workspace {
 
     pub fn relayout(&mut self, conn: &XConn, scr: &Screen) {
         (self._relayout)(conn, self, scr);
+    }
+
+    pub fn cycle_focus(&mut self, conn: &XConn, direction: Direction) {
+        (self._cycle_focus)(conn, self, direction);
     }
 
     pub fn contains(&self, window: XWindowID) -> Option<usize> {

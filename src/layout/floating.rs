@@ -1,6 +1,7 @@
 use crate::x::core::{XConn, XWindowID};
 use crate::workspace::Workspace;
 use crate::window::Client;
+use crate::types::Direction;
 use crate::desktop::Screen;
 use crate::values;
 
@@ -95,6 +96,10 @@ pub fn window_focus(conn: &XConn, ws: &mut Workspace, window: XWindowID) {
     }
 }
 
+pub fn cycle_focus(conn: &XConn, ws: &mut Workspace, direction: Direction) {
+    super::cycle_focus(conn, ws, direction)
+}
+
 pub fn relayout(_conn: &XConn, _ws: &mut Workspace, _screen: &Screen) {
-    // we do nothing because relayout is not needed
+    // we do nothing because relayout is not needed for floating
 }

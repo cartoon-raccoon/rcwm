@@ -5,6 +5,7 @@ use x11::keysym;
 use xcb::xproto;
 
 use crate::WM;
+use crate::types::Direction::*;
 
 pub type Keybind = (xcb::ModMask, xcb::Keysym, fn(&mut WM));
 
@@ -22,6 +23,9 @@ pub const KEYBINDS: &[Keybind] = &[
 
     (MODKEY, keysym::XK_Return, |_| {run_external(&["alacritty"])}),
     (MODKEY, keysym::XK_r, |_| {run_external(&["dmenu_run", "-b"])}),
+
+    (MODKEY, keysym::XK_Left, |wm| {wm.desktop.current_mut().cycle_focus(&wm.conn, Backward)}),
+    (MODKEY, keysym::XK_Right, |wm| {wm.desktop.current_mut().cycle_focus(&wm.conn, Forward)}),
 
     (MODKEY, keysym::XK_w, close_window),
 

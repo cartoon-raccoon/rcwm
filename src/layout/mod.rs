@@ -2,6 +2,7 @@ pub mod floating;
 pub mod dtiled;
 
 use crate::x::core::{XConn, XWindowID};
+use crate::types::Direction;
 use crate::workspace::Workspace;
 use crate::desktop::Screen;
 use crate::values;
@@ -90,5 +91,22 @@ pub fn deactivate(conn: &XConn, ws: &mut Workspace) {
         conn.unmap_window(window.id());
 
         conn.change_window_attributes(window.id(), &values::child_events());
+    }
+}
+
+pub fn cycle_focus(conn: &XConn, ws: &mut Workspace, direction: Direction) {
+    //change currently focused border colour to unfocused
+    if let Some(win) = ws.windows.focused() {
+        set_unfocus_colour(conn, win.id())
+    }
+    
+    //internally, cycle focus
+    ws.windows.cycle_focus(direction);
+
+    // change focus colours
+    if ws.windows.focused().is_some() {
+        let focused = ws.windows.focused().unwrap().id();
+
+        window_stack_and_focus(ws, conn, focused);
     }
 }

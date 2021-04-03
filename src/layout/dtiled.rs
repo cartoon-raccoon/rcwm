@@ -1,7 +1,7 @@
 use crate::x::core::{XConn, XWindowID};
 use crate::workspace::Workspace;
 use crate::window::Client;
-use crate::types::Geometry;
+use crate::types::{Geometry, Direction};
 use crate::desktop::Screen;
 use crate::values;
 
@@ -146,12 +146,14 @@ pub fn window_focus(conn: &XConn, ws: &mut Workspace, window: XWindowID) {
     super::floating::window_focus(conn, ws, window)
 }
 
+pub fn cycle_focus(conn: &XConn, ws: &mut Workspace, direction: Direction) {
+    super::cycle_focus(conn, ws, direction);
+}
+
 pub fn relayout(conn: &XConn, ws: &mut Workspace, screen: &Screen) {
     let root_geom = conn.get_root_geom().expect("Could not get root geom");
     calculate_geoms(ws, screen, root_geom);
-    for win in ws.windows.iter_mut() {
-        win.update_geometry(conn);
-    }
+    ws.windows.iter_mut().for_each(|win| win.update_geometry(conn));
 }
 
 fn calculate_geoms(ws: &mut Workspace, _screen: &Screen, root_geom: Geometry) {
