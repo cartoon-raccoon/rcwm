@@ -6,13 +6,20 @@ use crate::utils;
 
 pub const MODKEY: xcb::ModMask = xproto::MOD_MASK_4;
 pub const SHIFT: xcb::ModMask = xproto::MOD_MASK_SHIFT;
+pub const BORDER_WIDTH: u32 = 2;
 
 pub const KEYBINDS: &[Keybind] = &[
     (MODKEY, keysym::XK_1, |wm| {wm.goto_workspace(0);}),
     (MODKEY, keysym::XK_2, |wm| {wm.goto_workspace(1);}),
+    (MODKEY, keysym::XK_3, |wm| {wm.goto_workspace(2);}),
+    (MODKEY, keysym::XK_4, |wm| {wm.goto_workspace(3);}),
+    (MODKEY, keysym::XK_5, |wm| {wm.goto_workspace(4);}),
 
     (MODKEY|SHIFT, keysym::XK_1, |wm| {wm.send_window_to(0)}),
     (MODKEY|SHIFT, keysym::XK_2, |wm| {wm.send_window_to(1)}),
+    (MODKEY|SHIFT, keysym::XK_3, |wm| {wm.send_window_to(2)}),
+    (MODKEY|SHIFT, keysym::XK_4, |wm| {wm.send_window_to(3)}),
+    (MODKEY|SHIFT, keysym::XK_5, |wm| {wm.send_window_to(4)}),
 
     (MODKEY, keysym::XK_t, |wm| {wm.desktop.current_mut().toggle_focused_state(&wm.conn, &wm.screen)}),
 
