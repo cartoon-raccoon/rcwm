@@ -344,7 +344,7 @@ impl<'a> WM<'a> {
                     MouseMode::Move => {
                         selected.do_move(&self.conn, &self.screen, dx, dy);
                         if selected.is_tiled() {
-                            selected.set_floating();
+                            self.desktop.current_mut().toggle_focused_state(&self.conn, &self.screen);
                             self.desktop.current_mut().relayout(&self.conn, &self.screen);
                             assert!(self.desktop.current().is_tiling());
                         }
@@ -352,7 +352,7 @@ impl<'a> WM<'a> {
                     MouseMode::Resize => {
                         selected.do_resize(&self.conn, &self.screen, dx, dy);
                         if selected.is_tiled() {
-                            selected.set_floating();
+                            self.desktop.current_mut().toggle_focused_state(&self.conn, &self.screen);
                             self.desktop.current_mut().relayout(&self.conn, &self.screen);
                             assert!(self.desktop.current().is_tiling());
                         }
