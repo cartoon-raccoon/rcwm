@@ -4,7 +4,7 @@ use xcb;
 use std::{thread, process::Command};
 
 use crate::config;
-use crate::WM;
+use crate::WindowManager;
 use crate::types::Keybind;
 
 pub const ROOT_ATTRS: [(u32, u32); 1] = [
@@ -69,7 +69,7 @@ pub fn find_keybind(modm: xcb::ModMask, key: xcb::Keysym) -> Option<Keybind> {
     None
 }
 
-pub fn close_window(wm: &mut WM) {
+pub fn close_window(wm: &mut WindowManager) {
     if let Some(window) = wm.desktop.current_mut().windows.focused() {
         wm.conn.destroy_window(&window);
     }

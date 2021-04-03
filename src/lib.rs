@@ -9,7 +9,7 @@ pub mod config;
 pub mod utils;
 pub mod wm;
 
-pub use crate::wm::WM;
+pub use crate::wm::WindowManager;
 
 pub use crate::core::{
     window, workspace, desktop, types,

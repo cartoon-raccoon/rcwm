@@ -18,7 +18,7 @@ enum MouseMode {
 }
 
 #[allow(dead_code)]
-pub struct WM<'a> {
+pub struct WindowManager<'a> {
     pub conn: XConn<'a>,
     pub desktop: Desktop,
     pub screen: Screen,
@@ -30,7 +30,7 @@ pub struct WM<'a> {
     to_quit: bool,
 }
 
-impl<'a> WM<'a> {
+impl<'a> WindowManager<'a> {
     pub fn register(conn: &'a Connection, screen_idx: i32) -> Self {
         let mut xconn = XConn::new(conn, screen_idx);
 

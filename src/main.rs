@@ -17,7 +17,7 @@ pub use crate::core::{
 #[macro_use]
 extern crate log as logger;
 
-use wm::WM;
+use wm::WindowManager;
 
 use xcb::base::Connection;
 use xcb_util::ewmh;
@@ -39,7 +39,7 @@ fn main() -> anyhow::Result<()> {
         .map_err(|(err, _)| { err })
         .expect("Failed to connect via EWMH");
 
-    let mut wm = WM::register(&conn, screen_idx);
+    let mut wm = WindowManager::register(&conn, screen_idx);
 
     wm.run();
 
