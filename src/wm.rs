@@ -1,3 +1,6 @@
+//! This module defines WindowManager, the main object that runs the
+//! event loop in RaccoonWM.
+
 use xcb_util::{
     ewmh::Connection,
     cursor,
@@ -17,6 +20,7 @@ enum MouseMode {
     Resize,
 }
 
+/// The main manager struct that receives and responds to events.
 #[allow(dead_code)]
 pub struct WindowManager<'a> {
     pub conn: XConn<'a>,
@@ -31,6 +35,8 @@ pub struct WindowManager<'a> {
 }
 
 impl<'a> WindowManager<'a> {
+    /// Performs setup, registering for substructure redirect and substructure
+    /// notify on the root window, grabbing mouse buttons and keys, etc.
     pub fn register(conn: &'a Connection, screen_idx: i32) -> Self {
         let mut xconn = XConn::new(conn, screen_idx);
 
@@ -102,7 +108,10 @@ impl<'a> WindowManager<'a> {
         new
 
     }
-
+    
+    /// Runs the window manager.
+    /// 
+    /// Contains the main event loop.
     //using a mutable reference statically ensures there is only one instance running
     pub fn run(&mut self) {
         info!("Running WM");
@@ -163,7 +172,7 @@ impl<'a> WindowManager<'a> {
     }
 
     pub fn on_config_request(&mut self, event: &xcb::ConfigureRequestEvent) {
-        if let Some((ws, idx)) = self.desktop.contains_mut(event.window()) {
+        if let Some((ws, idx)) = self.desktop.retrieve_mut(event.window()) {
             debug!("On configure request for window {}", event.window());
 
             let is_tiling = ws.is_tiling();
@@ -203,7 +212,7 @@ impl<'a> WindowManager<'a> {
     }
 
     pub fn on_map_request(&mut self, event: &xcb::MapRequestEvent) {
-        if self.desktop.contains(event.window()).is_none() {
+        if self.desktop.retrieve(event.window()).is_none() {
             debug!("On map request for window {}", event.window());
 
             self.map_window(event.window());
@@ -241,7 +250,7 @@ impl<'a> WindowManager<'a> {
     }
 
     fn unmap_window(&mut self, window: XWindowID) {
-        if let Some((ws, idx)) = self.desktop.contains_mut(window) {
+        if let Some((ws, idx)) = self.desktop.retrieve_mut(window) {
             debug!("Unmap notify for window {}", window);
             ws.del_window(&self.conn, &self.screen, window, idx);
         } else {
