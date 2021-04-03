@@ -124,7 +124,7 @@ impl<T> Ring<T> {
     pub fn new() -> Self {
         Self {
             items: VecDeque::new(),
-            focused: Some(0),
+            focused: None,
         }
     }
 
