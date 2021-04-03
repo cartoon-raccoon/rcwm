@@ -1,9 +1,20 @@
+//! This module defines Ring, a data structure inspired by Penrose.
+//! 
+//! A `Ring` abstracts over an internal buffer and presents an interface
+//! that resembles a ring-buffer, with one element in focus, or none. 
+//! It can be rotated and the focus can be set, unset or cycled through
+//! in different directions.
+//! 
+//! Retrieving items from a `Ring` can be done using a `Selector`, which
+//! can retrieve the focused item, an item at an index, or an item that
+//! fulfills a predicate.
+//! 
+//! Insertion into a Ring is done with an InsertPoint, which can insert an item
+//! with respect to the current item in focus, or at a specified index.
+
 #![allow(dead_code)]
 use std::collections::VecDeque;
 use std::ops::{Index, IndexMut};
-
-use crate::window::Client;
-use crate::x::XWindowID;
 
 use crate::types::Direction;
 /// The point at which to insert the item.
@@ -24,7 +35,9 @@ pub enum InsertPoint {
     AfterFocused,
     /// Before the index of the focused window.
     BeforeFocused,
+    /// As the first item in the Ring.
     First,
+    /// As the last item in the Ring.
     Last,
 }
 
@@ -36,71 +49,6 @@ pub enum Selector<'a, T> {
     Condition(&'a dyn Fn(&T) -> bool),
 }
 
-/// A Ring of type Client.
-///
-/// Contains additional methods more specific to window management.
-pub type ClientRing = Ring<Client>;
-
-impl ClientRing {
-
-    pub fn remove_by_id(&mut self, id: XWindowID) -> Option<Client> {
-        if let Some(i) = self.get_idx(id) {
-            self.remove(i)
-        } else {
-            None
-        }
-    }
-
-    pub fn get_idx(&self, id: XWindowID) -> Option<usize> {
-        self.index(Selector::Condition(&|win| win.id() == id))
-    }
-
-    pub fn lookup(&self, id: XWindowID) -> Option<&Client> {
-        if let Some(i) = self.get_idx(id) {
-            self.get(i)
-        } else {
-            None
-        }
-    }
-
-    pub fn lookup_mut(&mut self, id: XWindowID) -> Option<&mut Client> {
-        if let Some(i) = self.get_idx(id) {
-            self.get_mut(i)
-        } else {
-            None
-        }
-    }
-
-    pub fn contains(&mut self, id: XWindowID) -> bool {
-        for win in self.items.iter() {
-            if win.id() == id {
-                return true
-            }
-        }
-        false
-    }
-
-    pub fn set_focused_by_winid(&mut self, id: XWindowID) {
-        if let Some(i) = self.get_idx(id) {
-            self.focused = Some(i)
-        } else {
-            error!("Tried to focus a client not in the workspace")
-        }
-    }
-
-    pub fn set_focused_by_idx(&mut self, idx: usize) {
-        self.set_focused(idx);
-    }
-
-    pub fn is_focused(&self, id: XWindowID) -> bool {
-        if let Some(window) = self.focused() {
-            return window.id() == id
-        } else {
-            false
-        }
-    }
-}
-
 /// An internal data structure to manage windows internally.
 /// 
 /// Provides an interface where the data is a ring of items,
@@ -109,9 +57,9 @@ impl ClientRing {
 #[derive(Debug, Clone, Default)]
 pub struct Ring<T> {
     /// Internal storage of windows
-    items: VecDeque<T>,
+    pub(crate) items: VecDeque<T>,
     /// Idx of focused window.
-    focused: Option<usize>,
+    pub(crate) focused: Option<usize>,
 }
 
 impl<T> Ring<T> {
@@ -219,10 +167,10 @@ impl<T> Ring<T> {
                 }
             }
             First => {
-                self.items.insert(0, item);
+                self.items.push_front(item);
             }
             Last => {
-                self.items.insert(self.items.len() - 1, item);
+                self.items.push_back(item);
             }
         }
     }

@@ -1,7 +1,6 @@
 use std::ops::{Index, IndexMut};
 
-use crate::window::Client;
-use crate::core::ClientRing;
+use crate::window::{Client, ClientRing};
 use crate::types::Direction;
 use crate::desktop::Screen;
 use crate::x::core::{XConn, XWindowID};

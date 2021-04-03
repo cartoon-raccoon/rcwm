@@ -5,5 +5,5 @@ pub mod types;
 pub mod ring;
 
 pub use self::ring::{
-    ClientRing, Selector,
+    Ring, Selector,
 };

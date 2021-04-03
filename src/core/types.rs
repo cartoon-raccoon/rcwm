@@ -6,6 +6,8 @@ use crate::layout::LayoutType;
 use crate::x::core::XConn;
 use crate::WindowManager;
 
+pub use crate::core::ring::{Ring, Selector};
+
 pub type Keybind = (xcb::ModMask, xcb::Keysym, fn(&mut WindowManager));
 
 /// Represents a direction to move.
