@@ -1,6 +1,8 @@
 todo: 
     start adding icccm support
+    add cycling masters
     implement manual tiling
+    add support for workspace names
     implement config file reading and integrate
     add ewmh and icccm support
 
