@@ -190,7 +190,7 @@ fn calculate_geoms(ws: &mut Workspace, _screen: &Screen, root_geom: Geometry) {
             debug!("dtiled::calculate_geoms: 1 master + 1 slave, mapping half-half");
 
             // move master window to the front
-            let master_idx = ws.windows.contains(mstr).unwrap();
+            let master_idx = ws.windows.get_idx(mstr).unwrap();
             ws.windows.move_front(master_idx);
             
             // get a mutable reference to the master window
@@ -236,7 +236,7 @@ fn calculate_geoms(ws: &mut Workspace, _screen: &Screen, root_geom: Geometry) {
             // and we need to update the slave windows instead
             // only update their height and xy coords
 
-            let master_idx = ws.windows.contains(mstr).unwrap();
+            let master_idx = ws.windows.get_idx(mstr).unwrap();
             ws.windows.move_front(master_idx);
 
             // get a mutable reference to the master window

@@ -336,7 +336,7 @@ impl<'a> WM<'a> {
             self.last_mouse_x = event.root_x() as i32;
             self.last_mouse_y = event.root_y() as i32;
 
-            if let Some(idx) = self.desktop.current().windows.contains(selected) {
+            if let Some(idx) = self.desktop.current().windows.get_idx(selected) {
                 let selected = self.desktop.current_mut().windows.get_mut(idx).unwrap();
                 match self.mousemode {
                     MouseMode::None => {

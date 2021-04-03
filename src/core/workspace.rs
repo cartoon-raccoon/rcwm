@@ -1,6 +1,7 @@
 use std::ops::{Index, IndexMut};
 
-use crate::window::{Client, Windows};
+use crate::window::Client;
+use crate::core::Ring;
 use crate::desktop::Screen;
 use crate::x::core::{XConn, XWindowID};
 use crate::values;
@@ -9,7 +10,7 @@ use crate::layout::{self, *};
 
 #[derive(Clone)]
 pub struct Workspace {
-    pub(crate) windows: Windows,
+    pub(crate) windows: Ring,
     pub(crate) master: Option<XWindowID>,
     pub(crate) layout: LayoutType,
 
@@ -25,7 +26,7 @@ pub struct Workspace {
 impl Default for Workspace {
     fn default() -> Self {
         Self {
-            windows: Windows::default(),
+            windows: Ring::default(),
             master: None,
             layout: LayoutType::DTiled,
 
@@ -44,7 +45,7 @@ impl Workspace {
     pub fn with_layout(layout: LayoutType) -> Self {
         match layout {
             LayoutType::Floating => Self {
-                windows: Windows::default(),
+                windows: Ring::default(),
                 master: None,
                 layout: layout,
     
@@ -56,7 +57,7 @@ impl Workspace {
                 _relayout: floating::relayout,
             },
             LayoutType::DTiled => Self {
-                windows: Windows::default(),
+                windows: Ring::default(),
                 master: None,
                 layout: layout,
 
@@ -122,12 +123,12 @@ impl Workspace {
     }
 
     pub fn set_master(&mut self, master_id: XWindowID) {
-        if !self.windows.has(master_id) {
+        if !self.windows.contains(master_id) {
             error!("set_master: No such window {}", master_id);
             return
         }
         self.master = Some(master_id);
-        let idx = self.windows.contains(master_id).unwrap();
+        let idx = self.windows.get_idx(master_id).unwrap();
         self.windows.move_front(idx);
     }
 
@@ -252,7 +253,7 @@ impl Workspace {
         screen: &Screen,
     ) -> Option<Client> {
         if let Some(window) = self.windows.focused() {
-            let idx = self.windows.contains(window.id()).unwrap();
+            let idx = self.windows.get_idx(window.id()).unwrap();
             let window = window.to_owned();
             self.del_window(conn, screen, window.id(), idx);
 
@@ -273,7 +274,7 @@ impl Workspace {
     }
 
     pub fn contains(&self, window: XWindowID) -> Option<usize> {
-        self.windows.contains(window)
+        self.windows.get_idx(window)
     }
 }
 
