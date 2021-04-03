@@ -8,7 +8,7 @@ use crate::x::core::{XConn, XWindowID};
 use crate::x::Ewmh;
 use crate::desktop::{Desktop, Screen};
 use crate::layout::LayoutType;
-use crate::keys;
+use crate::config;
 
 /// Whether the mouse button is pressed.
 enum MouseMode {
@@ -54,7 +54,7 @@ impl<'a> WM<'a> {
         xconn.grab_button(root_id, utils::ROOT_BUTTON_GRAB_MASK, xcb::BUTTON_INDEX_1, xcb::MOD_MASK_4, true);
         xconn.grab_button(root_id, utils::ROOT_BUTTON_GRAB_MASK, xcb::BUTTON_INDEX_3, xcb::MOD_MASK_4, true);
 
-        for (mask, ks, _) in keys::KEYBINDS {
+        for (mask, ks, _) in config::KEYBINDS {
             xconn.grab_key(root_id, *mask, *ks);
         }
 
@@ -269,7 +269,7 @@ impl<'a> WM<'a> {
 
         let (modm, keysym) = self.conn.lookup_keysym(event);
 
-        if let Some((_, _, cb)) = keys::find_keybind(modm, keysym) {
+        if let Some((_, _, cb)) = utils::find_keybind(modm, keysym) {
             debug!("Found keybind");
             cb(self);
             return

@@ -1,6 +1,12 @@
 #![allow(dead_code)]
 use xcb;
 
+use std::{thread, process::Command};
+
+use crate::config;
+use crate::WM;
+use crate::types::Keybind;
+
 pub const ROOT_ATTRS: [(u32, u32); 1] = [
     (
         xcb::CW_EVENT_MASK, 
@@ -48,4 +54,41 @@ pub fn stack_above() -> [(u16, u32); 1] {
         (xcb::CONFIG_WINDOW_STACK_MODE as u16, xcb::STACK_MODE_ABOVE),
         //(xcb::CONFIG_WINDOW_SIBLING as u16, window_id),
     ];
+}
+
+// helper functions for config things
+
+pub fn find_keybind(modm: xcb::ModMask, key: xcb::Keysym) -> Option<Keybind> {
+    
+    for kb in config::KEYBINDS {
+        if kb.0 == modm && kb.1 == key {
+            return Some(*kb)
+        }
+    }
+    
+    None
+}
+
+pub fn close_window(wm: &mut WM) {
+    if let Some(window) = wm.desktop.current_mut().windows.focused() {
+        wm.conn.destroy_window(&window);
+    }
+}
+
+pub fn run_external(args: &'static [&str]) {
+    thread::spawn(move || {
+        debug!("Executing command {}", args[0]);
+        let mut cmd = Command::new(args[0]);
+
+        cmd.args(&args[1..]);
+
+        match cmd.status() {
+            Ok(status) => {
+                debug!("Command exited with status {}", status)
+            }
+            Err(e) => {
+                debug!("Error while executing command: {}", e)
+            }
+        }
+    });
 }

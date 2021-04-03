@@ -8,7 +8,7 @@ mod x;
 mod core;
 mod utils;
 mod layout;
-mod keys;
+mod config;
 
 pub use crate::core::{
     window, workspace, desktop, types,

@@ -4,7 +4,7 @@ pub mod log;
 pub mod core;
 pub mod layout;
 pub mod x;
-pub mod keys;
+pub mod config;
 
 pub mod utils;
 pub mod wm;

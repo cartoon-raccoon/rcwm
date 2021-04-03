@@ -4,7 +4,9 @@ use xcb_util::icccm::{self, WmState};
 
 use crate::layout::LayoutType;
 use crate::x::core::XConn;
+use crate::WM;
 
+pub type Keybind = (xcb::ModMask, xcb::Keysym, fn(&mut WM));
 
 /// Represents a direction to move.
 /// 
