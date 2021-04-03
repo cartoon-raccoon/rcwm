@@ -1,5 +1,7 @@
-pub mod floating;
-pub mod dtiled;
+//! Layout types for defining the layout style used by RaccoonWM.
+
+pub(crate) mod floating;
+pub(crate) mod dtiled;
 
 use crate::x::core::{XConn, XWindowID};
 use crate::types::Direction;
@@ -7,8 +9,9 @@ use crate::workspace::Workspace;
 use crate::desktop::Screen;
 use crate::utils;
 
-pub const BORDER_WIDTH: u32 = 2;
+pub(crate) use crate::config::BORDER_WIDTH;
 
+/// The layouts that RaccoonWM can tile windows in.
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum LayoutType {
@@ -49,7 +52,7 @@ fn window_stack_and_focus(_ws: &mut Workspace, conn: &XConn, window: XWindowID) 
 /// The base activate function.
 /// 
 /// Sequentially maps every window to the screen.
-pub fn activate(conn: &XConn, ws: &mut Workspace, screen: &Screen) {
+pub(crate) fn activate(conn: &XConn, ws: &mut Workspace, screen: &Screen) {
     if ws.windows.is_empty() {
         return
     }
@@ -84,7 +87,7 @@ pub fn activate(conn: &XConn, ws: &mut Workspace, screen: &Screen) {
 /// The base deactivate function.
 /// 
 /// Sequentially unmaps every window in reverse.
-pub fn deactivate(conn: &XConn, ws: &mut Workspace) {
+pub(crate) fn deactivate(conn: &XConn, ws: &mut Workspace) {
     for window in ws.windows.iter() {
         conn.change_window_attributes(window.id(), &utils::disable_events());
 
@@ -94,7 +97,7 @@ pub fn deactivate(conn: &XConn, ws: &mut Workspace) {
     }
 }
 
-pub fn cycle_focus(conn: &XConn, ws: &mut Workspace, direction: Direction) {
+pub(crate) fn cycle_focus(conn: &XConn, ws: &mut Workspace, direction: Direction) {
     //change currently focused border colour to unfocused
     if let Some(win) = ws.windows.focused() {
         set_unfocus_colour(conn, win.id())

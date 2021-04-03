@@ -101,5 +101,6 @@ pub fn cycle_focus(conn: &XConn, ws: &mut Workspace, direction: Direction) {
 }
 
 pub fn relayout(_conn: &XConn, _ws: &mut Workspace, _screen: &Screen) {
-    // we do nothing because relayout is not needed for floating
+    //todo: if coming from tiling, 
+    //todo: we restore windows to their ICCCM-defined geometries
 }
