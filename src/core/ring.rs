@@ -5,13 +5,7 @@ use std::ops::{Index, IndexMut};
 use crate::window::Client;
 use crate::x::XWindowID;
 
-/// Direction to traverse the ring
-#[derive(Debug, Clone, Copy, PartialEq, Hash)]
-pub enum Direction {
-    Forward,
-    Backward,
-}
-
+use crate::types::Direction;
 /// The point at which to insert the item.
 /// 
 /// All items at or after the index at which the item 

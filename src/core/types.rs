@@ -5,6 +5,16 @@ use xcb_util::icccm::{self, WmState};
 use crate::layout::LayoutType;
 use crate::x::core::XConn;
 
+
+/// Represents a direction to move.
+/// 
+/// Used to cycle focus between windows, or cycle windows.
+#[derive(Debug, Clone, Copy, PartialEq, Hash)]
+pub enum Direction {
+    Forward,
+    Backward,
+}
+
 /// The Geometry of a given window.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Geometry {

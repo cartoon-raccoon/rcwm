@@ -4,4 +4,6 @@ pub mod desktop;
 pub mod types;
 pub mod ring;
 
-pub use self::ring::ClientRing;
+pub use self::ring::{
+    ClientRing, Selector,
+};
