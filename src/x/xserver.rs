@@ -5,7 +5,7 @@ use anyhow::{Context, Result};
 use std::ops::Index;
 
 use crate::window::Client;
-use crate::values;
+use crate::utils;
 use crate::types::Geometry;
 
 // #[derive(Clone, Copy, Debug)]
@@ -215,7 +215,7 @@ impl<'a> XConn<'a> {
 
     pub fn set_cursor(&mut self, window: XWindowID) {
         debug!("Setting cursor for {}", window);
-        self.change_window_attributes(window, &values::cursor_attrs(self.cursor))
+        self.change_window_attributes(window, &utils::cursor_attrs(self.cursor))
     }
 
     pub fn get_window_attributes(&self, window: XWindowID) -> Option<xcb::GetWindowAttributesReply> {

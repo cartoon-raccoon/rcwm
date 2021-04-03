@@ -6,7 +6,7 @@ pub mod layout;
 pub mod x;
 pub mod keys;
 
-pub mod values;
+pub mod utils;
 pub mod wm;
 
 pub use crate::wm::WM;

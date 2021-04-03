@@ -3,7 +3,7 @@ use crate::workspace::Workspace;
 use crate::window::Client;
 use crate::types::Direction;
 use crate::desktop::Screen;
-use crate::values;
+use crate::utils;
 
 use super::{set_unfocus_colour, BORDER_WIDTH};
 
@@ -23,7 +23,7 @@ pub fn add_window(conn: &XConn, ws: &mut Workspace, screen: &Screen, window_id: 
     conn.map_window(window.id());
 
     if let Some(_focused) = ws.windows.focused() {
-        conn.configure_window(window_id, &values::stack_above());
+        conn.configure_window(window_id, &utils::stack_above());
     }
     conn.configure_window(window.id(), &[(xcb::CONFIG_WINDOW_BORDER_WIDTH as u16, BORDER_WIDTH)]);
 
@@ -47,7 +47,7 @@ pub fn add_window(conn: &XConn, ws: &mut Workspace, screen: &Screen, window_id: 
         }
     }
     
-    conn.change_window_attributes(window.id(), &values::child_events());
+    conn.change_window_attributes(window.id(), &utils::child_events());
 
     ws.windows.push(window);
 }
@@ -63,7 +63,7 @@ pub fn del_window(
 ) ->  Client {
     let window = ws.windows.pop(idx);
 
-    conn.change_window_attributes(window_id, &values::disable_events());
+    conn.change_window_attributes(window_id, &utils::disable_events());
 
     conn.unmap_window(window_id);
 

@@ -6,7 +6,7 @@ use crate::x::core::{
     XWindowID
 };
 use crate::x::Icccm;
-use crate::values;
+use crate::utils;
 use crate::types::{WinLayoutState, Geometry};
 use crate::desktop::Screen;
 
@@ -136,7 +136,7 @@ impl Client {
         //     scry - self.xwindow.geom.height + MIN_ONSCREEN, 
         //     scry + scrh - MIN_ONSCREEN);
 
-        conn.configure_window(self.xwindow.id, &values::configure_move(
+        conn.configure_window(self.xwindow.id, &utils::configure_move(
             self.x() as u32, 
             self.y() as u32
         ));
@@ -175,7 +175,7 @@ impl Client {
         // ensure_in_bounds(&mut self.xwindow.geom.width, 
         //     WIN_WIDTH_MIN, scrx + scrw - self.xwindow.geom.x);
 
-        conn.configure_window(self.xwindow.id, &values::configure_resize(
+        conn.configure_window(self.xwindow.id, &utils::configure_resize(
             self.width() as u32, 
             self.height() as u32
         ));
@@ -192,12 +192,12 @@ impl Client {
 
     /// Updates its geometry on the X server.
     pub fn update_geometry(&self, conn: &XConn) {
-        conn.configure_window(self.xwindow.id, &values::configure_resize(
+        conn.configure_window(self.xwindow.id, &utils::configure_resize(
             self.width() as u32,
             self.height() as u32,
         ));
 
-        conn.configure_window(self.xwindow.id, &values::configure_move(
+        conn.configure_window(self.xwindow.id, &utils::configure_move(
             self.x() as u32,
             self.y() as u32,
         ))
@@ -207,12 +207,12 @@ impl Client {
     pub fn set_and_update_geometry(&mut self, conn: &XConn, geom: Geometry) {
         self.xwindow.set_geometry(geom);
 
-        conn.configure_window(self.xwindow.id, &values::configure_resize(
+        conn.configure_window(self.xwindow.id, &utils::configure_resize(
             self.width() as u32,
             self.height() as u32,
         ));
 
-        conn.configure_window(self.xwindow.id, &values::configure_move(
+        conn.configure_window(self.xwindow.id, &utils::configure_move(
             self.x() as u32,
             self.y() as u32,
         ))

@@ -3,7 +3,7 @@ use crate::workspace::Workspace;
 use crate::window::Client;
 use crate::types::{Geometry, Direction};
 use crate::desktop::Screen;
-use crate::values;
+use crate::utils;
 
 use super::BORDER_WIDTH;
 
@@ -72,8 +72,8 @@ pub fn add_window(conn: &XConn, ws: &mut Workspace, screen: &Screen, window_id: 
             win.configure(conn, &[(xcb::CONFIG_WINDOW_BORDER_WIDTH as u16, BORDER_WIDTH)]);
 
             conn.map_window(win.id());
-            win.configure(conn, &values::stack_above());
-            win.change_attributes(conn, &values::child_events());
+            win.configure(conn, &utils::stack_above());
+            win.change_attributes(conn, &utils::child_events());
         }
     }
     window_focus(conn, ws, window_id);
@@ -95,7 +95,7 @@ pub fn del_window(
     let window = ws.windows.pop(idx);
 
     // disable events and unmap the window
-    conn.change_window_attributes(window_id, &values::disable_events());
+    conn.change_window_attributes(window_id, &utils::disable_events());
     conn.unmap_window(window_id);
     ws.windows.unset_focused();
 

@@ -5,7 +5,7 @@ use crate::core::ClientRing;
 use crate::types::Direction;
 use crate::desktop::Screen;
 use crate::x::core::{XConn, XWindowID};
-use crate::values;
+use crate::utils;
 
 use crate::layout::{self, *};
 
@@ -229,7 +229,7 @@ impl Workspace {
 
                 // toggle state and stack above
                 win.toggle_state();
-                win.configure(conn, &values::stack_above());
+                win.configure(conn, &utils::stack_above());
 
                 if self.tiled_count() == 0 && self.master.is_some() {
                     // if master is the only window

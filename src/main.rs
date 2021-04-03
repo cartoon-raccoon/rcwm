@@ -6,7 +6,7 @@ mod log;
 mod wm;
 mod x;
 mod core;
-mod values;
+mod utils;
 mod layout;
 mod keys;
 

@@ -3,7 +3,7 @@ use xcb_util::{
     cursor,
 };
 
-use crate::values;
+use crate::utils;
 use crate::x::core::{XConn, XWindowID};
 use crate::x::Ewmh;
 use crate::desktop::{Desktop, Screen};
@@ -39,7 +39,7 @@ impl<'a> WM<'a> {
         debug!("Got root id of {}", root_id);
 
         // register for substructure redirect and substructure notify on root window 
-        xconn.change_window_attributes_checked(root_id, &values::ROOT_ATTRS)
+        xconn.change_window_attributes_checked(root_id, &utils::ROOT_ATTRS)
             // we panic here because this is a fatal error
             .unwrap_or_else(|_e| {
                 error!("Another window manager is running.");
@@ -51,8 +51,8 @@ impl<'a> WM<'a> {
             xconn.atoms.WM_DELETE_WINDOW
         ]);
 
-        xconn.grab_button(root_id, values::ROOT_BUTTON_GRAB_MASK, xcb::BUTTON_INDEX_1, xcb::MOD_MASK_4, true);
-        xconn.grab_button(root_id, values::ROOT_BUTTON_GRAB_MASK, xcb::BUTTON_INDEX_3, xcb::MOD_MASK_4, true);
+        xconn.grab_button(root_id, utils::ROOT_BUTTON_GRAB_MASK, xcb::BUTTON_INDEX_1, xcb::MOD_MASK_4, true);
+        xconn.grab_button(root_id, utils::ROOT_BUTTON_GRAB_MASK, xcb::BUTTON_INDEX_3, xcb::MOD_MASK_4, true);
 
         for (mask, ks, _) in keys::KEYBINDS {
             xconn.grab_key(root_id, *mask, *ks);
@@ -286,7 +286,7 @@ impl<'a> WM<'a> {
 
         self.selected = Some(event.child());
 
-        self.conn.grab_pointer(self.screen.xwindow.id, values::ROOT_POINTER_GRAB_MASK);
+        self.conn.grab_pointer(self.screen.xwindow.id, utils::ROOT_POINTER_GRAB_MASK);
 
         self.last_mouse_x = event.root_x() as i32;
         self.last_mouse_y = event.root_y() as i32;
@@ -327,7 +327,7 @@ impl<'a> WM<'a> {
             self.desktop.current_mut().focus_window(&self.conn, &self.screen, selected);
             // stack the window on top
             self.desktop.current_mut().windows.focused().unwrap()
-                .configure(&self.conn, &values::stack_above());
+                .configure(&self.conn, &utils::stack_above());
             debug!("On motion notify");
 
             let dx = event.root_x() as i32 - self.last_mouse_x;
