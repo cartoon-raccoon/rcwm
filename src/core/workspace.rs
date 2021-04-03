@@ -206,7 +206,7 @@ impl Workspace {
     }
 
     pub fn toggle_focused_state(&mut self, conn: &XConn, screen: &Screen) {
-        debug!("Toggling state of focused window {:?}", self.windows.focused());
+        debug!("Toggling state of focused window {:#?}", self.windows.focused());
         let master = self.master;
         // If we have a focused window
         if let Some(win) = self.windows.focused_mut() {

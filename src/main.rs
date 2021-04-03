@@ -5,13 +5,14 @@ mod log;
 
 mod wm;
 mod x;
-mod window;
+mod core;
 mod values;
-mod desktop;
-mod workspace;
 mod layout;
 mod keys;
-mod types;
+
+pub use crate::core::{
+    window, workspace, desktop, types,
+};
 
 #[macro_use]
 extern crate log as logger;
