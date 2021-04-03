@@ -1,3 +1,10 @@
+//! This module defines `Workspace`, which represents a collection
+//! of windows that can be displayed onscreen together.
+//! Each workspace tracks its windows inside a `ClientRing`,
+//! and also tracks whether each window is tiled or floating.
+//! Workspace layouts can be changed on the fly, and will adjust themselves
+//! as necessary.
+
 use std::ops::{Index, IndexMut};
 
 use crate::window::{Client, ClientRing};
@@ -8,19 +15,20 @@ use crate::utils;
 
 use crate::layout::{self, *};
 
+/// The workspace struct.
 #[derive(Clone)]
 pub struct Workspace {
     pub(crate) windows: ClientRing,
     pub(crate) master: Option<XWindowID>,
     pub(crate) layout: LayoutType,
 
-    pub _activate: fn(&XConn, &mut Workspace, &Screen),
-    pub _deactivate: fn(&XConn, &mut Workspace),
-    pub _add_window: fn(&XConn, &mut Workspace, &Screen, XWindowID),
-    pub _del_window: fn(&XConn, &mut Workspace, &Screen, XWindowID, usize) -> Client,
-    pub _focus_window: fn(&XConn, &mut Workspace, XWindowID),
-    pub _relayout: fn(&XConn, &mut Workspace, &Screen),
-    pub _cycle_focus: fn(&XConn, &mut Workspace, Direction),
+    _activate: fn(&XConn, &mut Workspace, &Screen),
+    _deactivate: fn(&XConn, &mut Workspace),
+    _add_window: fn(&XConn, &mut Workspace, &Screen, XWindowID),
+    _del_window: fn(&XConn, &mut Workspace, &Screen, XWindowID, usize) -> Client,
+    _focus_window: fn(&XConn, &mut Workspace, XWindowID),
+    _relayout: fn(&XConn, &mut Workspace, &Screen),
+    _cycle_focus: fn(&XConn, &mut Workspace, Direction),
 }
 
 impl Default for Workspace {
@@ -42,6 +50,7 @@ impl Default for Workspace {
 }
 
 impl Workspace {
+    /// Creates a workspace with a given layout.
     pub fn with_layout(layout: LayoutType) -> Self {
         match layout {
             LayoutType::Floating => Self {
@@ -77,12 +86,14 @@ impl Workspace {
         }
     }
 
-    pub fn set_layout(&mut self, layout: LayoutType) {
+    /// Changes a workspace's layout.
+    pub fn set_layout(&mut self, layout: LayoutType, conn: &XConn, scr: &Screen) {
         match layout {
             LayoutType::Floating => {
                 self.layout = layout;
-                self._activate = layout::activate;
-                self._deactivate = layout::deactivate;
+                self.master = None;
+                self._activate = floating::activate;
+                self._deactivate = floating::deactivate;
                 self._add_window = floating::add_window;
                 self._del_window = floating::del_window;
                 self._focus_window = floating::window_focus;
@@ -101,6 +112,7 @@ impl Workspace {
                 error!("Layout type {:?} not supported", unhandled)
             }
         }
+        self.relayout(conn, scr);
     }
 
     pub fn push_window(&mut self, window: Client) {

@@ -1,3 +1,5 @@
+//! The core components of RaccoonWM's functionality.
+
 pub mod window;
 pub mod workspace;
 pub mod desktop;

@@ -35,9 +35,9 @@ pub enum InsertPoint {
     AfterFocused,
     /// Before the index of the focused window.
     BeforeFocused,
-    /// As the first item in the Ring.
+    /// Insert the item as the first item in the Ring.
     First,
-    /// As the last item in the Ring.
+    /// Insert the item as the last item in the Ring.
     Last,
 }
 

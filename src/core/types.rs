@@ -1,3 +1,5 @@
+//! Various data types and definitions for use within RaccoonWM.
+
 #![allow(dead_code)]
 
 use xcb_util::icccm::{self, WmState};
@@ -6,8 +8,9 @@ use crate::layout::LayoutType;
 use crate::x::core::XConn;
 use crate::WindowManager;
 
-pub use crate::core::ring::{Ring, Selector};
+pub use crate::core::{Ring, Selector};
 
+/// Encapsulates a Keybind: The modifier, the actual key, and the callback to run.
 pub type Keybind = (xcb::ModMask, xcb::Keysym, fn(&mut WindowManager));
 
 /// Represents a direction to move.
@@ -64,8 +67,9 @@ impl Default for WindowState {
     }
 }
 
+/// Used internally to track whether a window is floating or tiled.
 #[derive(Clone, Copy, Debug)]
-pub enum WinLayoutState {
+pub(crate) enum WinLayoutState {
     Tiled,
     Floating,
 }
@@ -82,6 +86,7 @@ impl From<LayoutType> for WinLayoutState {
     }
 }
 
+/// The style for the window border.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum BorderStyle {
     Urgent,
@@ -105,6 +110,7 @@ pub enum WindowType {
 }
 
 impl WindowType {
+    /// Gets the atom type from an atom and an XConn.
     pub fn from_atom(atom: xcb::Atom, conn: &XConn) -> Option<Self> {
         use WindowType::*;
 
@@ -134,6 +140,7 @@ impl WindowType {
     }
 }
 
+//todo
 pub struct SizeHints {
     pub position: Option<(i32, i32)>,
     pub size: Option<(i32, i32)>,
@@ -143,6 +150,7 @@ pub struct SizeHints {
     pub aspect: Option<(i32, i32)>,
 }
 
+/// ICCCM-defined window properties.
 pub struct XWinProperties {
     pub wm_name: String,
     pub wm_icon_name: String,
