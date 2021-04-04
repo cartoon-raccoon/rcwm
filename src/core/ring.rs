@@ -70,6 +70,13 @@ impl<T> Ring<T> {
         }
     }
 
+    pub fn with_capacity(cap: usize) -> Self {
+        Self {
+            items: VecDeque::with_capacity(cap),
+            focused: None
+        }
+    }
+
     #[inline(always)]
     pub fn len(&self) -> usize {
         self.items.len()
@@ -104,6 +111,11 @@ impl<T> Ring<T> {
             }
         }
         false
+    }
+
+    #[inline(always)]
+    pub fn focused_idx(&self) -> Option<usize> {
+        self.focused
     }
 
     pub fn move_front(&mut self, idx: usize) {
