@@ -188,55 +188,8 @@ fn calculate_geoms(ws: &mut Workspace, _screen: &Screen, root_geom: Geometry) {
 
             master.set_geometry(master_geom);
 
-        } else if ws.tiled_count() == 2 {
-            debug!("dtiled::calculate_geoms: 1 master + 1 slave, mapping half-half");
-
-            // move master window to the front
-            let master_idx = ws.windows.get_idx(mstr).unwrap();
-            ws.windows.move_front(master_idx);
-            
-            // get a mutable reference to the master window
-            let master = ws.windows.lookup_mut(mstr).unwrap();
-
-            // cut the master in half
-            let mut master_geom = root_geom;
-            master_geom.height = root_geom.height - (BORDER_WIDTH as i32 * 2);
-            master_geom.width = (
-                (root_geom.width - BORDER_WIDTH as i32 * 2) / 2
-            ) - BORDER_WIDTH as i32;
-            
-            // set its geometry
-            master.set_geometry(master_geom);
-
-            // now for the slave window
-
-            // get its xy coords
-            let (slave_x, slave_y) = {
-                let left_corner = master_geom.x + master_geom.width + (BORDER_WIDTH as i32 *2);
-                // todo: using 0 will not work when incorporating gaps and bars
-                (left_corner, 0)
-            };
-
-            let slave_height = master_geom.height;
-            let slave_width = master_geom.width;
-
-            let slave_geom = Geometry {
-                x: slave_x,
-                y: slave_y,
-                height: slave_height,
-                width: slave_width,
-            };
-
-            dbg!(slave_geom);
-
-            let slave = ws.windows.get_mut(1).unwrap();
-
-            slave.set_geometry(slave_geom);
         } else { 
             debug!("dtiled::calculate_geoms: Multiple windows mapped, calculating");
-            // the master window is already chopped in half
-            // and we need to update the slave windows instead
-            // only update their height and xy coords
 
             let master_idx = ws.windows.get_idx(mstr).unwrap();
             ws.windows.move_front(master_idx);
@@ -247,19 +200,20 @@ fn calculate_geoms(ws: &mut Workspace, _screen: &Screen, root_geom: Geometry) {
             // get master's geometry
             let mut master_geom = master.xwindow.geom;
 
-            if master_geom.x != 0 || master_geom.y != 0 {
-                debug!("Master is not in position");
-
-                master_geom.x = root_geom.x;
-                master_geom.y = root_geom.y;
-                master_geom.height = root_geom.height - (BORDER_WIDTH as i32 * 2);
+            master_geom.height = root_geom.height - (BORDER_WIDTH as i32 * 2);
                 master_geom.width = (
                     (root_geom.width - BORDER_WIDTH as i32 * 2) / 2
                 ) - BORDER_WIDTH as i32;
 
-                master.set_geometry(master_geom);
+                
+            if master_geom.x != 0 || master_geom.y != 0 {
+                debug!("Master is not in position");
+                
+                master_geom.x = root_geom.x;
+                master_geom.y = root_geom.y;
             }
-
+            master.set_geometry(master_geom);
+                
             // get no of slave windows
             let slave_count = if ws.tiled_count() == 0 { 0 } else { ws.tiled_count() - 1 };
 
