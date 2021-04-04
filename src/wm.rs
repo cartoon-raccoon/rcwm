@@ -7,6 +7,7 @@ use xcb_util::{
 };
 
 use crate::utils;
+use crate::types::Direction;
 use crate::x::core::{XConn, XWindowID};
 use crate::x::Ewmh;
 use crate::desktop::{Desktop, Screen};
@@ -23,9 +24,9 @@ enum MouseMode {
 /// The main manager struct that receives and responds to events.
 #[allow(dead_code)]
 pub struct WindowManager<'a> {
-    pub conn: XConn<'a>,
-    pub desktop: Desktop,
-    pub screen: Screen,
+    pub(crate) conn: XConn<'a>,
+    pub(crate) desktop: Desktop,
+    pub(crate) screen: Screen,
     root: i32,
     mousemode: MouseMode,
     selected: Option<XWindowID>,
@@ -149,15 +150,39 @@ impl<'a> WindowManager<'a> {
         }
     }
 
+    /// Go to workspace `idx`.
     pub fn goto_workspace(&mut self, idx: usize) {
         self.desktop.goto(&self.conn, &self.screen, idx);
     }
 
+    pub fn cycle_workspace(&mut self, direction: Direction) {
+        self.desktop.cycle_workspace(&self.conn, &self.screen, direction);
+    }
+
+    /// Sends the focused window to workspace `idx`.
     pub fn send_window_to(&mut self, idx: usize) {
         self.desktop.send_window_to(&self.conn, &self.screen, idx);
     }
 
-    pub fn on_config_notify(&mut self, event: &xcb::ConfigureNotifyEvent) {
+    /// Cycles the focus in the given direction.
+    pub fn cycle_focus(&mut self, direction: Direction) {
+        self.desktop.current_mut().cycle_focus(&self.conn, direction);
+    }
+
+    /// Toggles the focused window into floating or tiled.
+    pub fn toggle_focused_state(&mut self) {
+        self.desktop.current_mut().toggle_focused_state(&self.conn, &self.screen)
+    }
+
+    pub fn quit(&mut self) {
+
+        // we use a field to mark a flag for quitting
+        // so that instead of exiting on the spot, we can instead
+        // break the loop and thereby run cleanup code if we need to
+        self.to_quit = true;
+    }
+
+    fn on_config_notify(&mut self, event: &xcb::ConfigureNotifyEvent) {
         if event.window() == self.screen.xwindow.id {
             debug!("On configure notify for root window");
 
@@ -171,7 +196,7 @@ impl<'a> WindowManager<'a> {
         }
     }
 
-    pub fn on_config_request(&mut self, event: &xcb::ConfigureRequestEvent) {
+    fn on_config_request(&mut self, event: &xcb::ConfigureRequestEvent) {
         if let Some((ws, idx)) = self.desktop.retrieve_mut(event.window()) {
             debug!("On configure request for window {}", event.window());
 
@@ -211,7 +236,7 @@ impl<'a> WindowManager<'a> {
         }
     }
 
-    pub fn on_map_request(&mut self, event: &xcb::MapRequestEvent) {
+    fn on_map_request(&mut self, event: &xcb::MapRequestEvent) {
         if self.desktop.retrieve(event.window()).is_none() {
             debug!("On map request for window {}", event.window());
 
@@ -239,12 +264,12 @@ impl<'a> WindowManager<'a> {
         self.desktop.current_mut().add_window(&self.conn, &self.screen, window);
     }
 
-    pub fn on_unmap_notify(&mut self, event: &xcb::UnmapNotifyEvent) {
+    fn on_unmap_notify(&mut self, event: &xcb::UnmapNotifyEvent) {
         debug!("On unmap notify");
         self.unmap_window(event.window());
     }
 
-    pub fn on_destroy_notify(&mut self, event: &xcb::DestroyNotifyEvent) {
+    fn on_destroy_notify(&mut self, event: &xcb::DestroyNotifyEvent) {
         debug!("On destroy notify");
         self.unmap_window(event.window());
     }
@@ -258,7 +283,7 @@ impl<'a> WindowManager<'a> {
         }
     }
 
-    pub fn on_enter_notify(&mut self, event: &xcb::EnterNotifyEvent) {
+    fn on_enter_notify(&mut self, event: &xcb::EnterNotifyEvent) {
         
         if !(event.mode() as u32 == xcb::NOTIFY_MODE_NORMAL ||
              event.mode() as u32 == xcb::NOTIFY_MODE_UNGRAB) {
@@ -273,7 +298,7 @@ impl<'a> WindowManager<'a> {
         }
     }
 
-    pub fn on_key_press(&mut self, event: &xcb::KeyPressEvent) {
+    fn on_key_press(&mut self, event: &xcb::KeyPressEvent) {
         debug!("Button press for window {}", event.event());
 
         let (modm, keysym) = self.conn.lookup_keysym(event);
@@ -287,7 +312,7 @@ impl<'a> WindowManager<'a> {
         debug!("No keybind found for key press event")
     }
 
-    pub fn on_button_press(&mut self, event: &xcb::ButtonPressEvent) {
+    fn on_button_press(&mut self, event: &xcb::ButtonPressEvent) {
         debug!("Button press for window {}", event.event());
         if event.child() == xcb::NONE {
             return
@@ -321,7 +346,7 @@ impl<'a> WindowManager<'a> {
         }
     }
 
-    pub fn on_button_release(&mut self, event: &xcb::ButtonReleaseEvent) {
+    fn on_button_release(&mut self, event: &xcb::ButtonReleaseEvent) {
         debug!("Button release for {}", event.event());
 
         self.selected = None;
@@ -330,7 +355,7 @@ impl<'a> WindowManager<'a> {
         self.conn.ungrab_pointer();
     }
 
-    pub fn on_motion_notify(&mut self, event: &xcb::MotionNotifyEvent) {
+    fn on_motion_notify(&mut self, event: &xcb::MotionNotifyEvent) {
         if let Some(selected) = self.selected {
             // focus the window
             self.desktop.current_mut().focus_window(&self.conn, &self.screen, selected);
@@ -373,13 +398,5 @@ impl<'a> WindowManager<'a> {
         } else {
             return
         }
-    }
-
-    pub fn quit(&mut self) {
-
-        // we use a field to mark a flag for quitting
-        // so that instead of exiting on the spot, we can instead
-        // break the loop and thereby run cleanup code if we need to
-        self.to_quit = true;
     }
 }
