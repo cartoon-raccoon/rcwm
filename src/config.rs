@@ -21,13 +21,16 @@ pub const KEYBINDS: &[Keybind] = &[
     (MODKEY|SHIFT, keysym::XK_4, |wm| {wm.send_window_to(3)}),
     (MODKEY|SHIFT, keysym::XK_5, |wm| {wm.send_window_to(4)}),
 
-    (MODKEY, keysym::XK_t, |wm| {wm.desktop.current_mut().toggle_focused_state(&wm.conn, &wm.screen)}),
+    (MODKEY, keysym::XK_t, |wm| {wm.toggle_focused_state()}),
 
     (MODKEY, keysym::XK_Return, |_| {utils::run_external(&["alacritty"])}),
     (MODKEY, keysym::XK_r, |_| {utils::run_external(&["dmenu_run", "-b"])}),
 
-    (MODKEY, keysym::XK_Left, |wm| {wm.desktop.current_mut().cycle_focus(&wm.conn, Backward)}),
-    (MODKEY, keysym::XK_Right, |wm| {wm.desktop.current_mut().cycle_focus(&wm.conn, Forward)}),
+    (MODKEY, keysym::XK_Left, |wm| {wm.cycle_focus(Backward)}),
+    (MODKEY, keysym::XK_Right, |wm| {wm.cycle_focus(Forward)}),
+
+    (MODKEY|SHIFT, keysym::XK_Left, |wm| {wm.cycle_workspace(Backward)}),
+    (MODKEY|SHIFT, keysym::XK_Right, |wm| {wm.cycle_workspace(Forward)}),
 
     (MODKEY, keysym::XK_w, utils::close_window),
 
