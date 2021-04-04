@@ -4,7 +4,7 @@ pub(crate) mod floating;
 pub(crate) mod dtiled;
 
 use crate::x::core::{XConn, XWindowID};
-use crate::types::Direction;
+use crate::types::{Direction, BorderStyle};
 use crate::workspace::Workspace;
 use crate::desktop::Screen;
 use crate::utils;
@@ -23,17 +23,12 @@ pub enum LayoutType {
     MTiled,
 }
 
-fn set_focus_colour(conn: &XConn, window: XWindowID) {
-    conn.change_window_attributes(window, &[(xcb::CW_BORDER_PIXEL, 0xff0000)]);
-}
-
-fn set_unfocus_colour(conn: &XConn, window: XWindowID) {
-    conn.change_window_attributes(window, &[(xcb::CW_BORDER_PIXEL, 0xdddddd)]);
-}
-
-fn window_stack_and_focus(_ws: &mut Workspace, conn: &XConn, window: XWindowID) {
+fn window_stack_and_focus(ws: &mut Workspace, conn: &XConn, window: XWindowID) {
+    use BorderStyle::*;
     // disable events
     conn.change_window_attributes(window, &utils::disable_events());
+
+    let win = ws.windows.lookup_mut(window).unwrap();
 
     // if there is a focused window, stack it above
     // if let Some(win) = ws.windows.focused() {
@@ -41,9 +36,10 @@ fn window_stack_and_focus(_ws: &mut Workspace, conn: &XConn, window: XWindowID) 
     //     conn.configure_window(window, &utils::stack_above(win.id()));
     // }
 
+    
     // focus to current window
+    win.set_border(conn, Focused);
     conn.set_input_focus(window);
-    set_focus_colour(conn, window);
 
     // re-enable events
     conn.change_window_attributes(window, &utils::child_events());
@@ -98,9 +94,11 @@ pub(crate) fn deactivate(conn: &XConn, ws: &mut Workspace) {
 }
 
 pub(crate) fn cycle_focus(conn: &XConn, ws: &mut Workspace, direction: Direction) {
+    use BorderStyle::*;
+
     //change currently focused border colour to unfocused
-    if let Some(win) = ws.windows.focused() {
-        set_unfocus_colour(conn, win.id())
+    if let Some(win) = ws.windows.focused_mut() {
+        win.set_border(conn, Unfocused);
     }
     
     //internally, cycle focus

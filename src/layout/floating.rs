@@ -1,11 +1,11 @@
 use crate::x::core::{XConn, XWindowID};
 use crate::workspace::Workspace;
 use crate::window::Client;
-use crate::types::Direction;
+use crate::types::{Direction, BorderStyle};
 use crate::desktop::Screen;
 use crate::utils;
 
-use super::{set_unfocus_colour, BORDER_WIDTH};
+use super::BORDER_WIDTH;
 
 pub fn activate(conn: &XConn, ws: &mut Workspace, screen: &Screen) {
     super::activate(conn, ws, screen)
@@ -34,11 +34,12 @@ pub fn add_window(conn: &XConn, ws: &mut Workspace, screen: &Screen, window_id: 
             if pointer.child() == screen.xwindow.id || pointer.child() == window_id {
                 window_focus(conn, ws, window_id);
             } else {
-                if let Some(focused) = ws.windows.focused() {
-                    set_unfocus_colour(conn, focused.id());
+                if let Some(focused) = ws.windows.focused_mut() {
+                    focused.set_border(conn, BorderStyle::Unfocused);
                     window_focus(conn, ws, window_id);
                 } else {
-                    set_unfocus_colour(conn, window_id);
+                    let win = ws.windows.lookup_mut(window_id).unwrap();
+                    win.set_border(conn, BorderStyle::Unfocused);
                 }
             }
         }
@@ -85,8 +86,8 @@ pub fn window_focus(conn: &XConn, ws: &mut Workspace, window: XWindowID) {
 
     if let Some(idx) = ws.windows.get_idx(window) {
         debug!("Found window {}", window);
-        if let Some(focused) = ws.windows.focused() {
-            set_unfocus_colour(conn, focused.id());
+        if let Some(focused) = ws.windows.focused_mut() {
+            focused.set_border(conn, BorderStyle::Unfocused);
         }
         // internally focus
         ws.windows.set_focused_by_idx(idx);

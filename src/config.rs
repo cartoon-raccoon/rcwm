@@ -8,6 +8,10 @@ pub const MODKEY: xcb::ModMask = xproto::MOD_MASK_4;
 pub const SHIFT: xcb::ModMask = xproto::MOD_MASK_SHIFT;
 pub const BORDER_WIDTH: u32 = 2;
 
+pub const BORDER_FOCUSED: u32 = 0xdddddd;
+pub const BORDER_UNFOCUSED: u32 = 0x555555;
+pub const BORDER_URGENT: u32 = 0xff0000;
+
 pub const KEYBINDS: &[Keybind] = &[
     (MODKEY, keysym::XK_1, |wm| {wm.goto_workspace(0);}),
     (MODKEY, keysym::XK_2, |wm| {wm.goto_workspace(1);}),

@@ -10,8 +10,19 @@ use crate::x::core::{
 };
 use crate::x::Icccm;
 use crate::utils;
-use crate::types::{WinLayoutState, Geometry, Ring, Selector};
+use crate::types::{
+    WinLayoutState, 
+    Geometry, 
+    Ring, 
+    Selector, 
+    BorderStyle,
+};
 use crate::desktop::Screen;
+use crate::config::{
+    BORDER_FOCUSED,
+    BORDER_UNFOCUSED,
+    BORDER_URGENT,
+};
 
 pub const WIN_HEIGHT_MIN: i32 = 100;
 pub const WIN_WIDTH_MIN: i32 = 100;
@@ -99,8 +110,8 @@ pub struct Client {
     pub xwindow: XWindow,
     pub name: String,
     pub icon_name: String,
-    
-    state: WinLayoutState,
+
+    layout_state: WinLayoutState,
     protocols: HashSet<xcb::Atom>,
 }
 
@@ -124,7 +135,7 @@ impl Client {
         let properties = conn.get_client_properties(from);
         Self {
             xwindow: XWindow::from(from),
-            state: layout,
+            layout_state: layout,
             name: properties.wm_name,
             icon_name: properties.wm_icon_name,
             protocols: HashSet::new(),
@@ -133,7 +144,7 @@ impl Client {
 
     #[inline]
     pub fn is_tiled(&self) -> bool {
-        if let WinLayoutState::Tiled = self.state {
+        if let WinLayoutState::Tiled = self.layout_state {
             return true
         }
         false
@@ -141,7 +152,7 @@ impl Client {
 
     #[inline]
     pub fn is_floating(&self) -> bool {
-        if let WinLayoutState::Floating = self.state {
+        if let WinLayoutState::Floating = self.layout_state {
             return true
         }
         false
@@ -149,20 +160,22 @@ impl Client {
 
     #[inline]
     pub fn set_tiled(&mut self) {
-        self.state = WinLayoutState::Tiled
+        self.layout_state = WinLayoutState::Tiled
     }
 
     #[inline]
     pub fn set_floating(&mut self) {
-        self.state = WinLayoutState::Floating
+        self.layout_state = WinLayoutState::Floating
     }
 
     #[inline]
     pub fn toggle_state(&mut self) {
-        if let WinLayoutState::Floating = self.state {
-            self.state = WinLayoutState::Tiled
-        } else if let WinLayoutState::Tiled = self.state {
-            self.state = WinLayoutState::Floating
+        if let WinLayoutState::Floating = self.layout_state {
+            debug!("Toggling window {} to tiled", self.id());
+            self.layout_state = WinLayoutState::Tiled
+        } else if let WinLayoutState::Tiled = self.layout_state {
+            debug!("Toggling window {} to floating", self.id());
+            self.layout_state = WinLayoutState::Floating
         }
     }
 
@@ -189,6 +202,32 @@ impl Client {
     #[inline(always)]
     pub fn width(&self) -> i32 {
         self.xwindow.geom.width
+    }
+
+    pub fn set_border(&mut self, conn: &XConn, border: BorderStyle) {
+        use BorderStyle::*;
+
+        match border {
+            Focused => {
+                conn.change_window_attributes(
+                    self.id(), &[(xcb::CW_BORDER_PIXEL, BORDER_FOCUSED)]
+                );
+            }
+            Unfocused => {
+                conn.change_window_attributes(
+                    self.id(), &[(xcb::CW_BORDER_PIXEL, BORDER_UNFOCUSED)]
+                );
+            }
+            Urgent => {
+                conn.change_window_attributes(
+                    self.id(), &[(xcb::CW_BORDER_PIXEL, BORDER_URGENT)]
+                );
+            }
+        }
+    }
+
+    pub fn map(&self, conn: &XConn) {
+        conn.map_window(self.id());
     }
     
     /// Configure the `Client` using a provided connection
