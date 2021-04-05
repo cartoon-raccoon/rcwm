@@ -38,9 +38,7 @@ pub fn deactivate(conn: &XConn, ws: &mut Workspace) {
 pub fn add_window(conn: &XConn, ws: &mut Workspace, screen: &Screen, window_id: XWindowID) {
     function_ends!("[start] dtiled::add_window");
     // Internally create a new window and set its supported protocols
-    let mut window = Client::tiled(window_id, conn);
-    window.set_supported(conn);
-
+    let window = Client::tiled(window_id, conn);
     // Get root geometries
     let root_geom = conn.get_root_geom().expect("Could not get root geometry");
     let root_geom2 = screen.xwindow.geom;
@@ -71,7 +69,7 @@ pub fn add_window(conn: &XConn, ws: &mut Workspace, screen: &Screen, window_id: 
         if win.id() == window_id {
             win.configure(conn, &[(xcb::CONFIG_WINDOW_BORDER_WIDTH as u16, BORDER_WIDTH)]);
 
-            conn.map_window(win.id());
+            win.map(conn);
             win.configure(conn, &utils::stack_above());
             win.change_attributes(conn, &utils::child_events());
         }
@@ -95,8 +93,8 @@ pub fn del_window(
     let window = ws.windows.pop(idx);
 
     // disable events and unmap the window
-    conn.change_window_attributes(window_id, &utils::disable_events());
-    conn.unmap_window(window_id);
+    window.change_attributes(conn, &utils::disable_events());
+    window.unmap(conn);
     ws.windows.unset_focused();
 
     // set new workspace master or unset it if empty
