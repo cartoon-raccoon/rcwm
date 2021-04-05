@@ -204,7 +204,7 @@ impl Workspace {
     pub fn add_window(&mut self, conn: &XConn, screen: &Screen, id: XWindowID) {
         (self._add_window)(conn, self, screen, id);
         debug!("Current master is {:?}", self.master);
-        dbg!(&self.windows);
+        debug!("{:#?}", &self.windows);
     }
 
     pub fn del_window(&mut self, 
@@ -215,7 +215,7 @@ impl Workspace {
     ) -> Client {
         let window = (self._del_window)(conn, self, screen, id, idx);
         debug!("Current master is {:?}", self.master);
-        dbg!(&self.windows);
+        debug!("{:#?}", self.windows);
         window
     }
 
@@ -227,7 +227,7 @@ impl Workspace {
             // set a stack variable to avoid overlapping lifetimes
             let win_id = win.id();
             if win.is_floating() { //toggling to tiled
-                debug!("Toggling window to tiled");
+                debug!("Toggling window state");
                 win.toggle_state();
                 // if we have no master
                 if master.is_none() {
@@ -236,7 +236,7 @@ impl Workspace {
                 }
                 // keep floating windows on top
             } else { //toggling to floating
-                debug!("Toggling window to floating");
+                debug!("Toggling window state");
 
                 // toggle state and stack above
                 win.toggle_state();

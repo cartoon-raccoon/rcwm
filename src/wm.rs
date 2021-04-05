@@ -143,6 +143,8 @@ impl<'a> WindowManager<'a> {
                 }
             }
 
+            self.update_windows();
+
             if self.to_quit {
                 info!("Quitting!");
                 break;
@@ -182,6 +184,12 @@ impl<'a> WindowManager<'a> {
         self.to_quit = true;
     }
 
+    fn update_windows(&mut self) {
+        for win in self.desktop.current_mut().windows.iter_mut() {
+            win.update_dynamic(&self.conn);
+        }
+    }
+
     fn on_config_notify(&mut self, event: &xcb::ConfigureNotifyEvent) {
         if event.window() == self.screen.xwindow.id {
             debug!("On configure notify for root window");
@@ -202,29 +210,23 @@ impl<'a> WindowManager<'a> {
 
             let is_tiling = ws.is_tiling();
             
-            let mut values = Vec::new();
-            
             let mut geom = Geometry::from((0, 0, 100, 160));
             let mut config_window_geom = false;
             
             if xcb::CONFIG_WINDOW_Y as u16 & event.value_mask() != 0 {
                 config_window_geom = true;
-                values.push((xcb::CONFIG_WINDOW_Y as u16, event.x() as u32));
                 geom.y = event.y() as i32;
             }
             if xcb::CONFIG_WINDOW_X as u16 & event.value_mask() != 0 {
                 config_window_geom = true;
-                values.push((xcb::CONFIG_WINDOW_X as u16, event.x() as u32));
                 geom.x = event.x() as i32;
             }
             if xcb::CONFIG_WINDOW_WIDTH as u16 & event.value_mask() != 0 {
                 config_window_geom = true;
-                values.push((xcb::CONFIG_WINDOW_WIDTH as u16, event.width() as u32));
                 geom.width = event.width() as i32;
             }
             if xcb::CONFIG_WINDOW_HEIGHT as u16 & event.value_mask() != 0 {
                 config_window_geom = true;
-                values.push((xcb::CONFIG_WINDOW_HEIGHT as u16, event.height() as u32));
                 geom.height = event.height() as i32;
             }
             if xcb::CONFIG_WINDOW_STACK_MODE as u16 & event.value_mask() != 0 {

@@ -111,9 +111,11 @@ pub struct Client {
     pub xwindow: XWindow,
     pub name: String,
     pub icon_name: String,
+    pub class: (String, String),
 
     initial_geom: Geometry,
     urgent: bool,
+    transient_for: Option<XWindowID>,
     mapped_state: WindowState,
     layout_state: WinLayoutState,
     protocols: HashSet<xcb::Atom>,
@@ -141,8 +143,13 @@ impl Client {
             xwindow: XWindow::from(from),
             name: properties.wm_name().into(),
             icon_name: properties.wm_icon_name().into(),
+            class: {
+                let (class1, class2) = properties.wm_class();
+                (class1.into(), class2.into())
+            },
             
             initial_geom: Geometry::default(),
+            transient_for: None,
             urgent: false,
             mapped_state: WindowState::Normal,
             layout_state: layout,
@@ -212,7 +219,7 @@ impl Client {
         self.xwindow.geom.width
     }
 
-    pub fn update_properties(&mut self, conn: &XConn) {
+    pub fn update_all_properties(&mut self, conn: &XConn) {
         let properties = conn.get_client_properties(self.id());
         let initial_geom = if let Some(sizes) = properties.wm_size_hints() {
             debug!("Got size hints: {:#?}", sizes);
@@ -232,6 +239,7 @@ impl Client {
         if self.initial_geom == Geometry::from((0, 0, 0, 0)) {
             self.initial_geom = initial_geom;
         }
+        self.transient_for = conn.get_wm_transient_for(self.id());
         self.urgent = if let Some(hints) = properties.wm_hints() {
             hints.urgent
         } else {false};
@@ -242,6 +250,29 @@ impl Client {
         };
         if self.protocols.is_empty() {
             self.set_supported(conn);
+        }
+    }
+
+    /// Checks and updates the dynamic properties of the window.
+    /// 
+    /// Checked:
+    /// 
+    /// - WM_NAME
+    /// - WM_ICON_NAME
+    /// - WM_CLASS
+    /// - WM_HINTS.Urgency
+    pub fn update_dynamic(&mut self, conn: &XConn) {
+        self.name = conn.get_wm_name(self.id());
+        self.icon_name = conn.get_wm_icon_name(self.id());
+        self.class = if let Some(class) = conn.get_wm_class(self.id()) {
+            class
+        } else {
+            ("".into(), "".into())
+        };
+        self.urgent = conn.get_urgency(self.id());
+
+        if self.urgent {
+            self.set_border(conn, BorderStyle::Urgent);
         }
     }
 
@@ -273,8 +304,8 @@ impl Client {
     }
 
     pub fn map(&mut self, conn: &XConn) {
+        self.update_all_properties(conn);
         conn.map_window(self.id());
-        self.update_properties(conn);
     }
 
     pub fn unmap(&self, conn: &XConn) {
