@@ -15,6 +15,8 @@ pub trait Icccm {
     fn get_wm_hints(&self, window: XWindowID) -> Option<icccm::WmHints>;    fn get_wm_class(&self, window: XWindowID) -> Option<(String, String)>;
     fn get_wm_protocols(&self, window: XWindowID) -> Option<Vec<xcb::Atom>>;
     fn get_wm_state(&self, window: XWindowID) -> WindowState;
+    fn get_wm_transient_for(&self, window: XWindowID) -> Option<XWindowID>;
+    fn get_urgency(&self, window: XWindowID) -> bool;
 }
 
 impl<'a> Icccm for XConn<'a> {
@@ -106,10 +108,44 @@ impl<'a> Icccm for XConn<'a> {
         }
     }
 
+    fn get_wm_transient_for(&self, window: XWindowID) -> Option<XWindowID> {
+        debug!("Get wm_transient_for for window {}", window);
+        let res = xcb::get_property(
+            &self.conn, // connection
+            false,      // delete?
+            window,     // window to query
+            xcb::ATOM_WM_TRANSIENT_FOR,
+            xcb::ATOM_WINDOW,
+            0, 1,
+        ).get_reply();
+        match res {
+            Ok(reply) => {
+                debug!("Reply format is {}", reply.format());
+                if reply.format() != 32 ||
+                reply.type_() != xcb::ATOM_WINDOW ||
+                reply.value_len() == 0 {
+                    return None
+                }
+                return Some(reply.value()[0]) 
+            }
+            Err(e) => {
+                warn!("Error: {}", e);
+                return None 
+            }
+        }
+    }
+
     fn get_wm_state(&self, window: XWindowID) -> WindowState {
         match icccm::get_wm_state(&self.conn, window).get_reply() {
             Ok(reply) => reply.state().into(),
             Err(_) => WindowState::default()
         }
+    }
+
+    fn get_urgency(&self, window: XWindowID) -> bool {
+        if let Some(hints) = self.get_wm_hints(window) {
+            return if let Some(u) = hints.is_urgent() {u} else {false}
+        }
+        false
     }
 }
