@@ -136,8 +136,8 @@ impl Client {
         Self {
             xwindow: XWindow::from(from),
             layout_state: layout,
-            name: properties.wm_name,
-            icon_name: properties.wm_icon_name,
+            name: properties.wm_name().into(),
+            icon_name: properties.wm_icon_name().into(),
             protocols: HashSet::new(),
         }
     }

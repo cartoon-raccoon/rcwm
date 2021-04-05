@@ -141,22 +141,101 @@ impl WindowType {
 }
 
 //todo
+/// ICCCM-defined window size hints.
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct SizeHints {
     pub position: Option<(i32, i32)>,
     pub size: Option<(i32, i32)>,
     pub min_size: Option<(i32, i32)>,
     pub max_size: Option<(i32, i32)>,
     pub resize: Option<(i32, i32)>,
-    pub aspect: Option<(i32, i32)>,
+    pub min_aspect: Option<(i32, i32)>,
+    pub max_aspect: Option<(i32, i32)>,
+    pub base: Option<(i32, i32)>,
+    pub gravity: Option<u32>
+}
+
+/// ICCCM-defined window hints.
+#[derive(Debug, Clone, Copy)]
+pub struct WmHints {
+    pub state: WindowState,
+    pub urgent: bool,
+    //todo: add pixmaps
 }
 
 /// ICCCM-defined window properties.
+//todo: make all fields private, accessible with methods.
 pub struct XWinProperties {
-    pub wm_name: String,
-    pub wm_icon_name: String,
-    pub wm_size_hints: Option<icccm::SizeHints>,
-    pub wm_hints: Option<icccm::WmHints>,
-    pub wm_class: (String, String), //Instance, Class
-    pub wm_protocols: Option<Vec<xcb::Atom>>,
-    pub wm_state: WindowState,
+    pub(crate) wm_name: String,
+    pub(crate) wm_icon_name: String,
+    pub(crate) wm_size_hints: Option<icccm::SizeHints>,
+    pub(crate) wm_hints: Option<icccm::WmHints>,
+    pub(crate) wm_class: (String, String), //Instance, Class
+    pub(crate) wm_protocols: Option<Vec<xcb::Atom>>,
+    pub(crate) wm_state: WindowState,
+}
+
+impl XWinProperties {
+    pub fn wm_name(&self) -> &str {
+        &self.wm_name
+    }
+
+    pub fn wm_icon_name(&self) -> &str {
+        &self.wm_icon_name
+    }
+
+    #[inline]
+    pub fn wm_size_hints(&self) -> Option<SizeHints> {
+        if let Some(hints) = &self.wm_size_hints {
+            Some(SizeHints {
+                position: hints.position(),
+                size: hints.size(),
+                min_size: hints.min_size(),
+                max_size: hints.max_size(),
+                resize: hints.resize(),
+                min_aspect: hints.aspect().map(|(i,_)| i),
+                max_aspect: hints.aspect().map(|(_,i)| i),
+                base: hints.base(),
+                gravity: hints.gravity(),
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn wm_hints(&self) -> Option<WmHints> {
+        use WindowState::*;
+        if let Some(hints) = &self.wm_hints {
+            Some(WmHints {
+                state: if hints.is_normal() {
+                    Normal
+                } else if hints.is_iconic() {
+                    Iconic
+                } else if hints.is_withdrawn() {
+                    Withdrawn
+                } else {
+                    Normal
+                },
+                urgent: if let Some(u) = hints.is_urgent() {u} else {false}
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn wm_class(&self) -> (&str, &str) {
+        (&self.wm_class.0, &self.wm_class.1)
+    }
+
+    pub fn window_type(&self) -> Option<&[xcb::Atom]> {
+        if let Some(prtcls) = &self.wm_protocols {
+            return Some(&prtcls)
+        } else {
+            None
+        }
+    }
+
+    pub fn wm_state(&self) -> WindowState {
+        self.wm_state
+    }
 }
