@@ -7,7 +7,7 @@ use xcb_util::{
 };
 
 use crate::utils;
-use crate::types::Direction;
+use crate::types::{Direction, Geometry};
 use crate::x::core::{XConn, XWindowID};
 use crate::x::Ewmh;
 use crate::desktop::{Desktop, Screen};
@@ -201,38 +201,64 @@ impl<'a> WindowManager<'a> {
             debug!("On configure request for window {}", event.window());
 
             let is_tiling = ws.is_tiling();
+            
+            let mut values = Vec::new();
+            
+            let mut geom = Geometry::from((0, 0, 100, 160));
+            let mut config_window_geom = false;
+            
+            if xcb::CONFIG_WINDOW_Y as u16 & event.value_mask() != 0 {
+                config_window_geom = true;
+                values.push((xcb::CONFIG_WINDOW_Y as u16, event.x() as u32));
+                geom.y = event.y() as i32;
+            }
+            if xcb::CONFIG_WINDOW_X as u16 & event.value_mask() != 0 {
+                config_window_geom = true;
+                values.push((xcb::CONFIG_WINDOW_X as u16, event.x() as u32));
+                geom.x = event.x() as i32;
+            }
+            if xcb::CONFIG_WINDOW_WIDTH as u16 & event.value_mask() != 0 {
+                config_window_geom = true;
+                values.push((xcb::CONFIG_WINDOW_WIDTH as u16, event.width() as u32));
+                geom.width = event.width() as i32;
+            }
+            if xcb::CONFIG_WINDOW_HEIGHT as u16 & event.value_mask() != 0 {
+                config_window_geom = true;
+                values.push((xcb::CONFIG_WINDOW_HEIGHT as u16, event.height() as u32));
+                geom.height = event.height() as i32;
+            }
+            if xcb::CONFIG_WINDOW_STACK_MODE as u16 & event.value_mask() != 0 {
+                debug!("Configure window stack mode")
+            }
+            if xcb::CONFIG_WINDOW_BORDER_WIDTH as u16 & event.value_mask() != 0 {
+                debug!("Configure window border width")
+            }
+            if xcb::CONFIG_WINDOW_SIBLING as u16 & event.value_mask() != 0 {
+                debug!("Configure window sibling")
+            }
+            
             let ref mut window = ws[idx];
 
             // if we are tiling the window
             if is_tiling && window.is_tiled() {
-                // reject the request
-                debug!("Workspace is tiling, rejecting request");
-                // send back unchanged geometry
-                window.update_geometry(&self.conn);
+                if config_window_geom {
+                    // reject the request
+                    debug!("Workspace is tiling, rejecting request");
+                    // send back unchanged geometry
+                    window.update_geometry(&self.conn);
+                    // however, set initial geom for when floating
+                    window.set_initial_geom(geom);
+                }
+                //todo: else honour other requests
                 return
             }
-            
-            let mut values = Vec::new();
 
-            if xcb::CONFIG_WINDOW_Y as u16 & event.value_mask() != 0 {
-                values.push((xcb::CONFIG_WINDOW_Y as u16, event.x() as u32));
-                window.xwindow.geom.y = event.y() as i32;
-            }
-            if xcb::CONFIG_WINDOW_X as u16 & event.value_mask() != 0 {
-                values.push((xcb::CONFIG_WINDOW_X as u16, event.x() as u32));
-                window.xwindow.geom.x = event.x() as i32;
-            }
-            if xcb::CONFIG_WINDOW_WIDTH as u16 & event.value_mask() != 0 {
-                values.push((xcb::CONFIG_WINDOW_WIDTH as u16, event.width() as u32));
-                window.xwindow.geom.width = event.width() as i32;
-            }
-            if xcb::CONFIG_WINDOW_HEIGHT as u16 & event.value_mask() != 0 {
-                values.push((xcb::CONFIG_WINDOW_HEIGHT as u16, event.height() as u32));
-                window.xwindow.geom.height = event.height() as i32;
+            if config_window_geom {
+                window.set_and_update_geometry(&self.conn, geom);
+                dbg!(window);
             }
 
-            self.conn.configure_window(event.window(), &values);
-            dbg!(window);
+
         }
     }
 
