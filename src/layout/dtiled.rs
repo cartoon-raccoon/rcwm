@@ -236,7 +236,7 @@ fn calculate_geoms(ws: &mut Workspace, _screen: &Screen, root_geom: Geometry) {
                     width: slave_width,
                 };
 
-                dbg!(slave_geom);
+                debug!("{:#?}", slave_geom);
 
                 win.set_geometry(slave_geom);
             }

@@ -132,8 +132,8 @@ impl XWindow {
     /// Sets the geometry using a provided Geometry.
     pub fn set_geometry(&mut self, geom: Geometry) {
         debug!(
-            "Updating geometry:\nx: {}, y: {}, h: {}, w: {}", 
-            geom.x, geom.y, geom.height, geom.width
+            "Updating geometry for window {}:\nx: {}, y: {}, h: {}, w: {}", 
+            self.id, geom.x, geom.y, geom.height, geom.width
         );
         self.geom = geom;
     }
