@@ -84,10 +84,10 @@ pub fn run_external(args: &'static [&str]) {
 
         match cmd.status() {
             Ok(status) => {
-                debug!("Command exited with status {}", status)
+                debug!("Command exited with status {}", status);
             }
             Err(e) => {
-                debug!("Error while executing command: {}", e)
+                debug!("Error while executing command: {}", e);
             }
         }
     });

@@ -68,7 +68,7 @@ impl<'a> WindowManager<'a> {
         // fatal because this is the WM setup process
         xconn.create_cursor(cursor::LEFT_PTR)
             .unwrap_or_else(|_e| {
-                fatal!("Could not create cursor")
+                fatal!("Could not create cursor");
         });
 
         xconn.set_cursor(root_id);
@@ -130,13 +130,13 @@ impl<'a> WindowManager<'a> {
                     xcb::UNMAP_NOTIFY => self.on_unmap_notify(xcb::cast_event(&event)),
                     xcb::DESTROY_NOTIFY => self.on_destroy_notify(xcb::cast_event(&event)),
                     xcb::ENTER_NOTIFY => self.on_enter_notify(xcb::cast_event(&event)),
-                    xcb::LEAVE_NOTIFY => {debug!("Leave notify")}
+                    xcb::LEAVE_NOTIFY => {debug!("Leave notify");}
                     xcb::MOTION_NOTIFY => self.on_motion_notify(xcb::cast_event(&event)),
-                    xcb::REPARENT_NOTIFY => {debug!("Reparent notify")}
+                    xcb::REPARENT_NOTIFY => {debug!("Reparent notify");}
                     xcb::KEY_PRESS => self.on_key_press(xcb::cast_event(&event)),
                     xcb::BUTTON_PRESS => self.on_button_press(xcb::cast_event(&event)),
                     xcb::BUTTON_RELEASE => self.on_button_release(xcb::cast_event(&event)),
-                    xcb::CLIENT_MESSAGE => {debug!("Client message")}
+                    xcb::CLIENT_MESSAGE => {debug!("Client message");}
                     unhandled => {
                         debug!("Unhandled event {}", unhandled);
                     }
@@ -228,13 +228,13 @@ impl<'a> WindowManager<'a> {
                 geom.height = event.height() as i32;
             }
             if xcb::CONFIG_WINDOW_STACK_MODE as u16 & event.value_mask() != 0 {
-                debug!("Configure window stack mode")
+                debug!("Configure window stack mode");
             }
             if xcb::CONFIG_WINDOW_BORDER_WIDTH as u16 & event.value_mask() != 0 {
-                debug!("Configure window border width")
+                debug!("Configure window border width");
             }
             if xcb::CONFIG_WINDOW_SIBLING as u16 & event.value_mask() != 0 {
-                debug!("Configure window sibling")
+                debug!("Configure window sibling");
             }
             
             let ref mut window = ws[idx];
@@ -255,7 +255,7 @@ impl<'a> WindowManager<'a> {
 
             if config_window_geom {
                 window.set_and_update_geometry(&self.conn, geom);
-                dbg!(window);
+                debug!("{:#?}", window);
             }
 
 
@@ -305,7 +305,7 @@ impl<'a> WindowManager<'a> {
             debug!("Unmap notify for window {}", window);
             ws.del_window(&self.conn, &self.screen, window, idx);
         } else {
-            debug!("Unmap notify for untracked window {}", window)
+            debug!("Unmap notify for untracked window {}", window);
         }
     }
 
@@ -335,7 +335,7 @@ impl<'a> WindowManager<'a> {
             return
         }
 
-        debug!("No keybind found for key press event")
+        debug!("No keybind found for key press event");
     }
 
     fn on_button_press(&mut self, event: &xcb::ButtonPressEvent) {
@@ -363,10 +363,10 @@ impl<'a> WindowManager<'a> {
                 self.mousemode = MouseMode::Resize;
             }
             xcb::BUTTON_INDEX_2 => {
-                debug!("Middle mouse button selected")
+                debug!("Middle mouse button selected");
             }
             _ => {
-                warn!("Unhandled mouse button event")
+                warn!("Unhandled mouse button event");
             }
 
         }
