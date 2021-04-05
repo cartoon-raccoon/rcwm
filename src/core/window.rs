@@ -12,6 +12,7 @@ use crate::x::Icccm;
 use crate::utils;
 use crate::types::{
     WinLayoutState, 
+    WindowState,
     Geometry, 
     Ring, 
     Selector, 
@@ -111,6 +112,9 @@ pub struct Client {
     pub name: String,
     pub icon_name: String,
 
+    initial_geom: Geometry,
+    urgent: bool,
+    mapped_state: WindowState,
     layout_state: WinLayoutState,
     protocols: HashSet<xcb::Atom>,
 }
@@ -135,9 +139,13 @@ impl Client {
         let properties = conn.get_client_properties(from);
         Self {
             xwindow: XWindow::from(from),
-            layout_state: layout,
             name: properties.wm_name().into(),
             icon_name: properties.wm_icon_name().into(),
+            
+            initial_geom: Geometry::default(),
+            urgent: false,
+            mapped_state: WindowState::Normal,
+            layout_state: layout,
             protocols: HashSet::new(),
         }
     }
@@ -204,6 +212,44 @@ impl Client {
         self.xwindow.geom.width
     }
 
+    pub fn update_properties(&mut self, conn: &XConn) {
+        let properties = conn.get_client_properties(self.id());
+        let initial_geom = if let Some(sizes) = properties.wm_size_hints() {
+            debug!("Got size hints: {:#?}", sizes);
+            Geometry {
+                x: if let Some(pos) = sizes.position {pos.0} else {0},
+                y: if let Some(pos) = sizes.position {pos.1} else {0},
+                height: if let Some(dim) = sizes.size {dim.0} else {100},
+                width: if let Some(dim) = sizes.size {dim.1} else {160},
+            }
+        } else {
+            debug!("initial size is None");
+            Geometry::from((0, 0, 100, 160))
+        };
+        self.name = properties.wm_name().into();
+        self.icon_name = properties.wm_icon_name().into();
+
+        if self.initial_geom == Geometry::from((0, 0, 0, 0)) {
+            self.initial_geom = initial_geom;
+        }
+        self.urgent = if let Some(hints) = properties.wm_hints() {
+            hints.urgent
+        } else {false};
+        self.mapped_state = if let Some(hints) = properties.wm_hints() {
+            hints.state
+        } else {
+            WindowState::Normal
+        };
+        if self.protocols.is_empty() {
+            self.set_supported(conn);
+        }
+    }
+
+    pub(crate) fn set_initial_geom(&mut self, geom: Geometry) {
+        debug!("Setting initial geom to {:#?}", geom);
+        self.initial_geom = geom;
+    }
+
     pub fn set_border(&mut self, conn: &XConn, border: BorderStyle) {
         use BorderStyle::*;
 
@@ -226,8 +272,13 @@ impl Client {
         }
     }
 
-    pub fn map(&self, conn: &XConn) {
+    pub fn map(&mut self, conn: &XConn) {
         conn.map_window(self.id());
+        self.update_properties(conn);
+    }
+
+    pub fn unmap(&self, conn: &XConn) {
+        conn.unmap_window(self.id());
     }
     
     /// Configure the `Client` using a provided connection

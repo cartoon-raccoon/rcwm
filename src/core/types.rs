@@ -42,6 +42,17 @@ impl From<(i32, i32, i32, i32)> for Geometry {
     }
 }
 
+impl Default for Geometry {
+    fn default() -> Self {
+        Geometry {
+            x: 0,
+            y: 0,
+            height: 100,
+            width: 160,
+        }
+    }
+}
+
 /// The ICCCM-defined window states.
 #[derive(Clone, Copy, Debug)]
 pub enum WindowState {
