@@ -7,12 +7,21 @@ use xcb_util::icccm;
 use crate::x::{XConn, XWindowID};
 use crate::types::{XWinProperties, WindowState};
 
+/// Exposes ICCCM functionality for an object holding an XCB connection.
+/// Mainly used to expose ICCCM functionality for XConn only when needed.
+/// For more information on what these methods return, consult the
+/// [ICCCM](https://www.x.org/releases/X11R7.6/doc/xorg-docs/specs/ICCCM/icccm.html)
+/// reference.
+/// 
+/// Warning: DO NOT READ THROUGH EVERYTHING. It is incredibly boring and you _will_
+/// fall asleep. Consult only the parts you need, as needed.
 pub trait Icccm {
     fn get_client_properties(&self, window: XWindowID) -> XWinProperties;
     fn get_wm_name(&self, window: XWindowID) -> String;
     fn get_wm_icon_name(&self, window: XWindowID) -> String;
     fn get_wm_size_hints(&self, window: XWindowID) -> Option<icccm::SizeHints>;
-    fn get_wm_hints(&self, window: XWindowID) -> Option<icccm::WmHints>;    fn get_wm_class(&self, window: XWindowID) -> Option<(String, String)>;
+    fn get_wm_hints(&self, window: XWindowID) -> Option<icccm::WmHints>;    
+    fn get_wm_class(&self, window: XWindowID) -> Option<(String, String)>;
     fn get_wm_protocols(&self, window: XWindowID) -> Option<Vec<xcb::Atom>>;
     fn get_wm_state(&self, window: XWindowID) -> WindowState;
     fn get_wm_transient_for(&self, window: XWindowID) -> Option<XWindowID>;
@@ -56,13 +65,13 @@ impl Icccm for XConn {
         };
 
         XWinProperties {
-                wm_name: wm_name,
-                wm_icon_name: wm_icon_name,
-                wm_size_hints: wm_size_hints,
-                wm_hints: wm_hints,
-                wm_class: wm_class,
-                wm_protocols: wm_protocols,
-                wm_state: wm_state,
+            wm_name: wm_name,
+            wm_icon_name: wm_icon_name,
+            wm_size_hints: wm_size_hints,
+            wm_hints: wm_hints,
+            wm_class: wm_class,
+            wm_protocols: wm_protocols,
+            wm_state: wm_state,
         }
     }
 

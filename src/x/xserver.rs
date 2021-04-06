@@ -1,3 +1,6 @@
+//! The base functionality for communicating with the X Server.
+//! Also contains some extra types that are intrinsic to the X server.
+
 use xcb_util::{ewmh, cursor};
 use xcb_util::keysyms::KeySymbols;
 use anyhow::{Context, Result};
@@ -87,6 +90,7 @@ impl InternedAtoms {
 
 pub type XWindowID = xcb::Window;
 
+/// A low-level window type that contains a window ID and its geometry.
 #[derive(Debug, Clone, Copy)]
 pub struct XWindow {
     pub id: XWindowID,
@@ -155,13 +159,12 @@ impl XWindow {
     }
 }
 
-/// Holds a handle to an xcb connection, as well as other attributes
+/// Holds a handle to an XCB connection, as well as other attributes
 /// about the window manager.
 pub struct XConn {
-    pub conn: ewmh::Connection,
+    pub(crate) conn: ewmh::Connection,
     pub atoms: InternedAtoms,
     pub cursor: xcb::Cursor,
-    //pub keysyms: KeySymbols<'a>,
     pub current_scr: i32,
 }
 
@@ -174,7 +177,6 @@ impl XConn {
             conn: xconn,
             atoms: atoms,
             cursor: 0,
-            //keysyms: KeySymbols::new(xconn),
             current_scr: idx,
         }
     }
@@ -197,16 +199,19 @@ impl XConn {
         self.get_geometry(root_id)
     }
 
+    /// Set the screen of the current root.
     pub fn set_root_scr(&mut self, scr: i32) {
         self.current_scr = scr;
     }
 
+    /// Get a list of all active windows.
     pub fn query_tree(&self, window: XWindowID) -> Result<Vec<XWindowID>> {
         xcb::query_tree(&self.conn, window).get_reply()
             .map(|ok| ok.children().to_owned())
             .map_err(|err| anyhow::Error::new(err))
     }
 
+    /// Create the cursor.
     pub fn create_cursor(&mut self, glyph: u16) -> Result<()> {
         debug!("Creating cursor");
         let cursor_id = cursor::create_font_cursor_checked(&self.conn, glyph)?;
@@ -214,11 +219,13 @@ impl XConn {
         Ok(())
     }
 
+    /// Set cursor.
     pub fn set_cursor(&mut self, window: XWindowID) {
         debug!("Setting cursor for {}", window);
         self.change_window_attributes(window, &utils::cursor_attrs(self.cursor))
     }
 
+    /// Get window attributes
     pub fn get_window_attributes(&self, window: XWindowID) -> Option<xcb::GetWindowAttributesReply> {
         debug!("Getting attributes for window {}", window);
 
