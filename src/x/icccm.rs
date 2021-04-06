@@ -19,7 +19,7 @@ pub trait Icccm {
     fn get_urgency(&self, window: XWindowID) -> bool;
 }
 
-impl<'a> Icccm for XConn<'a> {
+impl Icccm for XConn {
     fn get_client_properties(&self, window: XWindowID) -> XWinProperties {
         debug!("Getting client properties for window {}", window);
         //todo: get wm_transient_for

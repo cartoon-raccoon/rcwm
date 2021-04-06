@@ -157,23 +157,24 @@ impl XWindow {
 
 /// Holds a handle to an xcb connection, as well as other attributes
 /// about the window manager.
-pub struct XConn<'a> {
-    pub conn: &'a ewmh::Connection,
+pub struct XConn {
+    pub conn: ewmh::Connection,
     pub atoms: InternedAtoms,
     pub cursor: xcb::Cursor,
-    pub keysyms: KeySymbols<'a>,
+    //pub keysyms: KeySymbols<'a>,
     pub current_scr: i32,
 }
 
 #[allow(dead_code)]
-impl<'a> XConn<'a> {
+impl XConn {
     /// Creates a new X Connection.
-    pub fn new(xconn: &'a ewmh::Connection, idx: i32) -> Self {
+    pub fn new(xconn: ewmh::Connection, idx: i32) -> Self {
+        let atoms = InternedAtoms::new(&xconn);
         Self {
             conn: xconn,
-            atoms: InternedAtoms::new(xconn),
+            atoms: atoms,
             cursor: 0,
-            keysyms: KeySymbols::new(xconn),
+            //keysyms: KeySymbols::new(xconn),
             current_scr: idx,
         }
     }
@@ -201,14 +202,14 @@ impl<'a> XConn<'a> {
     }
 
     pub fn query_tree(&self, window: XWindowID) -> Result<Vec<XWindowID>> {
-        xcb::query_tree(self.conn, window).get_reply()
+        xcb::query_tree(&self.conn, window).get_reply()
             .map(|ok| ok.children().to_owned())
             .map_err(|err| anyhow::Error::new(err))
     }
 
     pub fn create_cursor(&mut self, glyph: u16) -> Result<()> {
         debug!("Creating cursor");
-        let cursor_id = cursor::create_font_cursor_checked(self.conn, glyph)?;
+        let cursor_id = cursor::create_font_cursor_checked(&self.conn, glyph)?;
         self.cursor = cursor_id;
         Ok(())
     }
@@ -221,23 +222,23 @@ impl<'a> XConn<'a> {
     pub fn get_window_attributes(&self, window: XWindowID) -> Option<xcb::GetWindowAttributesReply> {
         debug!("Getting attributes for window {}", window);
 
-        xcb::get_window_attributes(self.conn, window).get_reply().ok()
+        xcb::get_window_attributes(&self.conn, window).get_reply().ok()
     }
 
     pub fn change_window_attributes(&self, window: XWindowID, attrs: &[(u32, u32)]) {
         //debug!("Changing attributes for window {}", window);
-        xcb::change_window_attributes(self.conn, window, attrs);
+        xcb::change_window_attributes(&self.conn, window, attrs);
     }
 
     pub fn change_window_attributes_checked(&self, window: XWindowID, attrs: &[(u32, u32)]) -> Result<()> {
         //debug!("Changing window attributes");
-        xcb::change_window_attributes_checked(self.conn, window, attrs).request_check()
+        xcb::change_window_attributes_checked(&self.conn, window, attrs).request_check()
             .with_context(|| String::from("Could not change window attributes"))
     }
 
     pub fn configure_window(&self, window: XWindowID, attrs: &[(u16, u32)]) {
         debug!("Configuring window {}", window);
-        xcb::configure_window(self.conn, window, attrs);
+        xcb::configure_window(&self.conn, window, attrs);
     }
 
     pub fn reparent_window(&self, window: XWindowID, parent: XWindowID) {
@@ -263,7 +264,7 @@ impl<'a> XConn<'a> {
     pub fn map_window(&self, window_id: XWindowID) {
         debug!("Mapping window {}", window_id);
 
-        let cookie = xcb::map_window(self.conn, window_id);
+        let cookie = xcb::map_window(&self.conn, window_id);
         if let Err(e) = cookie.request_check() {
             error!("Could not map window {}: {}", window_id, e)
         }
@@ -272,7 +273,7 @@ impl<'a> XConn<'a> {
     pub fn unmap_window(&self, window_id: XWindowID) {
         debug!("Unmapping window {}", window_id);
 
-        let cookie = xcb::unmap_window(self.conn, window_id);
+        let cookie = xcb::unmap_window(&self.conn, window_id);
         if let Err(e) = cookie.request_check() {
             error!("Could not unmap window {}: {}", window_id, e)
         }
@@ -292,7 +293,7 @@ impl<'a> XConn<'a> {
             let msg_event = xcb::ClientMessageEvent::new(32, window.id(), self.atoms.WM_PROTOCOLS, msg_data);
 
             xcb::send_event(
-                self.conn,
+                &self.conn,
                 false,
                 window.id(),
                 xcb::EVENT_MASK_NO_EVENT,
@@ -308,12 +309,12 @@ impl<'a> XConn<'a> {
     pub fn set_input_focus(&self, window_id: XWindowID) {
         debug!("Setting focus for window {}", window_id);
 
-        xcb::set_input_focus(self.conn, xcb::INPUT_FOCUS_POINTER_ROOT as u8, window_id, xcb::CURRENT_TIME);
+        xcb::set_input_focus(&self.conn, xcb::INPUT_FOCUS_POINTER_ROOT as u8, window_id, xcb::CURRENT_TIME);
     }
 
     pub fn get_geometry(&self, window_id: XWindowID) -> Result<Geometry> {
         debug!("Getting geometry");
-        xcb::get_geometry(self.conn, window_id).get_reply()
+        xcb::get_geometry(&self.conn, window_id).get_reply()
             .with_context(|| {
                 String::from("Failed to get window geometry")
             })
@@ -328,7 +329,7 @@ impl<'a> XConn<'a> {
     }
 
     pub fn lookup_keysym(&self, event:&xcb::KeyPressEvent) -> (xcb::ModMask, xcb::Keysym) {
-        let keysym = self.keysyms.press_lookup_keysym(event, 0);
+        let keysym = KeySymbols::new(&self.conn).press_lookup_keysym(event, 0);
 
         (event.state() as u32, keysym)
     }
@@ -336,11 +337,11 @@ impl<'a> XConn<'a> {
     pub fn grab_key(&self, window_id: XWindowID, mask: xcb::ModMask, keysym: xcb::Keysym) {
         debug!("Grabbing key {} for window {}", keysym, window_id);
 
-        let code = self.keysyms.get_keycode(keysym).next();
+        let code = KeySymbols::new(&self.conn).get_keycode(keysym).next();
 
         if let Some(code) = code {
             xcb::grab_key(
-                self.conn,
+                &self.conn,
                 false,
                 window_id,
                 mask as u16,
@@ -365,7 +366,7 @@ impl<'a> XConn<'a> {
         debug!("Grab button {} for window: {}", button, window_id);
 
         xcb::grab_button(
-            self.conn, 
+            &self.conn, 
             false, 
             window_id, 
             mask as u16, 
@@ -384,7 +385,7 @@ impl<'a> XConn<'a> {
         debug!("Grabbing pointer for window: {}", window_id);
 
         xcb::grab_pointer(
-            self.conn,
+            &self.conn,
             false,
             window_id,
             mask as u16,
@@ -399,13 +400,13 @@ impl<'a> XConn<'a> {
     pub fn ungrab_pointer(&self) {
         debug!("Ungrabbing pointer");
 
-        xcb::ungrab_pointer(self.conn, xcb::CURRENT_TIME);
+        xcb::ungrab_pointer(&self.conn, xcb::CURRENT_TIME);
     }
 
     pub fn query_pointer(&self, window_id: XWindowID) -> Result<xcb::QueryPointerReply> {
         debug!("Querying pointer location for window {}", window_id);
 
-        xcb::query_pointer(self.conn, window_id).get_reply()
+        xcb::query_pointer(&self.conn, window_id).get_reply()
         .with_context(|| String::from("Failed to query pointer"))
     }
 

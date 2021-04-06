@@ -11,16 +11,16 @@ pub trait Ewmh {
     fn set_supported(&self, screen_idx: i32, atoms: &[xcb::Atom]);
 }
 
-impl<'a> Ewmh for XConn<'a> {
+impl Ewmh for XConn {
     fn get_window_type(&self, window: XWindowID) -> Option<Vec<xcb::Atom>> {
         debug!("Getting type for window {}", window);
 
-        ewmh::get_wm_window_type(self.conn, window)
+        ewmh::get_wm_window_type(&self.conn, window)
         .get_reply().ok()
         .map(|ok| ok.atoms().to_owned())
     }
 
     fn set_supported(&self, screen_idx: i32, atoms: &[xcb::Atom]) {
-        ewmh::set_supported(self.conn, screen_idx, atoms);
+        ewmh::set_supported(&self.conn, screen_idx, atoms);
     }
 }

@@ -23,8 +23,8 @@ enum MouseMode {
 
 /// The main manager struct that receives and responds to events.
 #[allow(dead_code)]
-pub struct WindowManager<'a> {
-    pub(crate) conn: XConn<'a>,
+pub struct WindowManager {
+    pub(crate) conn: XConn,
     pub(crate) desktop: Desktop,
     pub(crate) screen: Screen,
     root: i32,
@@ -35,10 +35,10 @@ pub struct WindowManager<'a> {
     to_quit: bool,
 }
 
-impl<'a> WindowManager<'a> {
+impl WindowManager {
     /// Performs setup, registering for substructure redirect and substructure
     /// notify on the root window, grabbing mouse buttons and keys, etc.
-    pub fn register(conn: &'a Connection, screen_idx: i32) -> Self {
+    pub fn register(conn: Connection, screen_idx: i32) -> Self {
         let mut xconn = XConn::new(conn, screen_idx);
 
         let root_id = xconn.get_root_id();

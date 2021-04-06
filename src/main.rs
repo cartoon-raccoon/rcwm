@@ -39,7 +39,7 @@ fn main() -> anyhow::Result<()> {
         .map_err(|(err, _)| { err })
         .expect("Failed to connect via EWMH");
 
-    let mut wm = WindowManager::register(&conn, screen_idx);
+    let mut wm = WindowManager::register(conn, screen_idx);
 
     wm.run();
 
