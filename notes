@@ -3,6 +3,7 @@ todo:
     add cycling masters
     add check for if window is top-level
         add placing wm_state on top-level window
+    migrate to std Result for all fallible functions
     add receiving and interpreting client messages
     start adding ewmh support
     implement tiling windows into closest position onscreen
