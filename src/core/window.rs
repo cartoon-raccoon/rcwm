@@ -305,6 +305,10 @@ impl Client {
 
     pub fn map(&mut self, conn: &XConn) {
         self.update_all_properties(conn);
+        conn.change_window_attributes(
+            self.id(), 
+            &[(xcb::CW_EVENT_MASK, xcb::EVENT_MASK_PROPERTY_CHANGE)]
+        );
         conn.map_window(self.id());
     }
 

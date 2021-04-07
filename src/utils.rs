@@ -10,7 +10,9 @@ use crate::types::Keybind;
 pub const ROOT_ATTRS: [(u32, u32); 1] = [
     (
         xcb::CW_EVENT_MASK, 
-        xcb::EVENT_MASK_SUBSTRUCTURE_REDIRECT | xcb::EVENT_MASK_STRUCTURE_NOTIFY
+        xcb::EVENT_MASK_SUBSTRUCTURE_REDIRECT | 
+        xcb::EVENT_MASK_STRUCTURE_NOTIFY |
+        xcb::EVENT_MASK_PROPERTY_CHANGE
     )
 ];
 

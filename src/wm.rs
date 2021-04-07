@@ -133,6 +133,7 @@ impl WindowManager {
                     xcb::LEAVE_NOTIFY => {debug!("Leave notify");}
                     xcb::MOTION_NOTIFY => self.on_motion_notify(xcb::cast_event(&event)),
                     xcb::REPARENT_NOTIFY => {debug!("Reparent notify");}
+                    xcb::PROPERTY_NOTIFY => self.on_property_notify(xcb::cast_event(&event)),
                     xcb::KEY_PRESS => self.on_key_press(xcb::cast_event(&event)),
                     xcb::BUTTON_PRESS => self.on_button_press(xcb::cast_event(&event)),
                     xcb::BUTTON_RELEASE => self.on_button_release(xcb::cast_event(&event)),
@@ -278,16 +279,25 @@ impl WindowManager {
         if let Some(window_type) = self.conn.get_window_type(window) {
             if !(window_type.contains(&self.conn.atoms.WM_WINDOW_TYPE_NORMAL)||
                  window_type.contains(&self.conn.atoms.WM_WINDOW_TYPE_DIALOG)||
-                 window_type.contains(&self.conn.atoms.WM_WINDOW_TYPE_SPLASH)||
                 window_type.contains(&self.conn.atoms.WM_WINDOW_TYPE_UTILITY)||
                 window_type.contains(&self.conn.atoms.WM_WINDOW_TYPE_TOOLBAR)
-                ) {
+                ) || window_type.contains(&self.conn.atoms.WM_WINDOW_TYPE_SPLASH) {
+                if window_type.contains(&self.conn.atoms.WM_WINDOW_TYPE_NORMAL) {
+                    debug!("Window type has normal");
+                }
+                if window_type.contains(&self.conn.atoms.WM_WINDOW_TYPE_DIALOG) {
+                    debug!("Window type has dialog");
+                }
+                if window_type.contains(&self.conn.atoms.WM_WINDOW_TYPE_TOOLBAR) {
+                    debug!("Window type has toolbar");
+                }
                 debug!("Mapping but not tracking window {}", window);
 
                 self.conn.map_window(window);
                 return
             }
         }
+
 
         self.desktop.current_mut().add_window(&self.conn, &self.screen, window);
     }
@@ -425,6 +435,13 @@ impl WindowManager {
 
         } else {
             return
+        }
+    }
+
+    fn on_property_notify(&mut self, event: &xcb::PropertyNotifyEvent) {
+        let window = event.window();
+        if let Some(win) = self.desktop.current_mut().windows.lookup(window) {
+            debug!("Property change for window {:?}", win);
         }
     }
 }
