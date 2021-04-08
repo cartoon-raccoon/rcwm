@@ -172,6 +172,10 @@ impl WindowManager {
         self.desktop.current_mut().cycle_focus(&self.conn, direction);
     }
 
+    pub fn cycle_master(&mut self, direction: Direction) {
+        self.desktop.current_mut().cycle_master(&self.conn, &self.screen, direction);
+    }
+
     /// Toggles the focused window into floating or tiled.
     pub fn toggle_focused_state(&mut self) {
         self.desktop.current_mut().toggle_focused_state(&self.conn, &self.screen)

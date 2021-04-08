@@ -291,6 +291,18 @@ impl Workspace {
         (self._cycle_focus)(conn, self, direction);
     }
 
+    pub fn cycle_master(&mut self, 
+        conn: &XConn, 
+        screen: &Screen, 
+        direction: Direction
+    ) {
+        if !self.windows.is_empty() {
+            self.windows.rotate(direction);
+            self.master = Some(self.windows.get(0).unwrap().id());
+            self.relayout(conn, screen);
+        }
+    }
+
     pub fn contains(&self, window: XWindowID) -> Option<usize> {
         self.windows.get_idx(window)
     }

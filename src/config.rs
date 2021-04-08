@@ -6,6 +6,7 @@ use crate::utils;
 
 pub const MODKEY: xcb::ModMask = xproto::MOD_MASK_4;
 pub const SHIFT: xcb::ModMask = xproto::MOD_MASK_SHIFT;
+pub const CTRL: xcb::ModMask = xproto::MOD_MASK_CONTROL;
 pub const BORDER_WIDTH: u32 = 2;
 
 pub const BORDER_FOCUSED: u32 = 0xdddddd;
@@ -35,6 +36,9 @@ pub const KEYBINDS: &[Keybind] = &[
 
     (MODKEY|SHIFT, keysym::XK_Left, |wm| {wm.cycle_workspace(Backward)}),
     (MODKEY|SHIFT, keysym::XK_Right, |wm| {wm.cycle_workspace(Forward)}),
+
+    (MODKEY|CTRL, keysym::XK_Left, |wm| {wm.cycle_master(Backward)}),
+    (MODKEY|CTRL, keysym::XK_Right, |wm| {wm.cycle_master(Forward)}),
 
     (MODKEY, keysym::XK_w, utils::close_window),
 
