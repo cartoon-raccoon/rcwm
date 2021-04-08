@@ -1,7 +1,5 @@
 //! Various data types and definitions for use within RaccoonWM.
 
-#![allow(dead_code)]
-
 use xcb_util::icccm::{self, WmState};
 
 use crate::layout::LayoutType;

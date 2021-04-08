@@ -39,7 +39,6 @@ impl Screen {
     }
 }
 
-#[allow(dead_code)]
 impl Desktop {
     /// Creates a new desktop with a specified layout.
     pub fn new(layout: LayoutType) -> Self {

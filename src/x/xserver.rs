@@ -113,7 +113,6 @@ impl From<XWindowID> for XWindow {
     }
 }
 
-#[allow(dead_code)]
 impl XWindow {
     /// Sets the geometry using a provided XConn.
     pub fn set_geometry_conn(&mut self, conn: &XConn) {
@@ -168,7 +167,6 @@ pub struct XConn {
     pub current_scr: i32,
 }
 
-#[allow(dead_code)]
 impl XConn {
     /// Creates a new X Connection.
     pub fn new(xconn: ewmh::Connection, idx: i32) -> Self {

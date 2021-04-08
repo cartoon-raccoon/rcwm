@@ -12,7 +12,6 @@
 //! Insertion into a Ring is done with an InsertPoint, which can insert an item
 //! with respect to the current item in focus, or at a specified index.
 
-#![allow(dead_code)]
 use std::collections::VecDeque;
 use std::ops::{Index, IndexMut};
 
@@ -298,6 +297,7 @@ impl<T> Ring<T> {
         self.iter().enumerate().find(|(_, e)| cond(*e))
     }
 
+    #[allow(dead_code)]
     fn element_by_mut(&mut self, cond: impl Fn(&T) -> bool) -> Option<(usize, &mut T)> {
         self.iter_mut().enumerate().find(|(_, e)| cond(*e))
     }
