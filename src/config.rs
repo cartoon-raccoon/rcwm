@@ -1,12 +1,13 @@
 use x11::keysym;
-use xcb::xproto;
+use xcb::ModMask;
 
-use crate::types::{Direction::*, Keybind};
+use crate::types::{
+    Direction::*, Keybind,
+    SHIFT, CTRL, ModKey, modkey
+};
 use crate::utils;
 
-pub const MODKEY: xcb::ModMask = xproto::MOD_MASK_4;
-pub const SHIFT: xcb::ModMask = xproto::MOD_MASK_SHIFT;
-pub const CTRL: xcb::ModMask = xproto::MOD_MASK_CONTROL;
+pub const MODKEY: ModMask = modkey(ModKey::Meta);
 pub const BORDER_WIDTH: u32 = 2;
 
 pub const BORDER_FOCUSED: u32 = 0xdddddd;

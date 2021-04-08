@@ -1,6 +1,7 @@
 //! Various data types and definitions for use within RaccoonWM.
 
 use xcb_util::icccm::{self, WmState};
+use xcb::xproto;
 
 use crate::layout::LayoutType;
 use crate::x::core::XConn;
@@ -10,6 +11,26 @@ pub use crate::core::{Ring, Selector};
 
 /// Encapsulates a Keybind: The modifier, the actual key, and the callback to run.
 pub type Keybind = (xcb::ModMask, xcb::Keysym, fn(&mut WindowManager));
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum ModKey {
+    Meta,
+    Alt,
+}
+
+/// The Shift keymask.
+pub const SHIFT: xcb::ModMask = xproto::MOD_MASK_SHIFT;
+/// The Ctrl keymask.
+pub const CTRL: xcb::ModMask = xproto::MOD_MASK_CONTROL;
+
+/// Sets the Modkey to be used.
+pub const fn modkey(modkey: ModKey) -> xcb::ModMask {
+    use ModKey::*;
+    match modkey {
+        Meta => xproto::MOD_MASK_4,
+        Alt  => xproto::MOD_MASK_1,
+    }
+}
 
 /// Represents a direction to move.
 /// 
