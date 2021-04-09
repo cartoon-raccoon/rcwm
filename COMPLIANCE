@@ -5,7 +5,14 @@ ICCCM and EWMH compliance
 / -> partial support
 
 ==== ICCCM Compliance ====
-
++ WM_NAME
++ WM_ICON_NAME
++ WM_NORMAL_HINTS
++ WM_HINTS
++ WM_CLASS
++ WM_TRANSIENT_FOR
++ WM_PROTOCOLS - WM_DELETE_WINDOW
++ WM_STATE (partially)
 
 ==========================
 
