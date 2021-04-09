@@ -1,0 +1,25 @@
+ICCCM and EWMH compliance
+
++ -> fully supported
+- -> zero support
+/ -> partial support
+
+==== ICCCM Compliance ====
+
+
+==========================
+
+==== EWMH Compliance =====
+//Root Window Properties//
++ _NET_SUPPORTED
+- _NET_CLIENT_LIST (todo)
+- _NET_NUMBER_OF_DESKTOPS (todo)
+- _NET_DESKTOP_GEOMETRY (todo)
+- _NET_DESKTOP_VIEWPORT
+- _NET_CURRENT_DESKTOP (todo)
+- _NET_DESKTOP_NAMES (maybe)
+- _NET_ACTIVE_WINDOW (todo)
+
+//Application Window Properties//
+
+==========================
