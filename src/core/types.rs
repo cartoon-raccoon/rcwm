@@ -1,5 +1,5 @@
 //! Various data types and definitions for use within RaccoonWM.
-
+use std::convert::TryInto;
 use xcb_util::icccm::{self, WmState};
 use xcb::xproto;
 
@@ -66,8 +66,8 @@ impl Default for Geometry {
         Geometry {
             x: 0,
             y: 0,
-            height: 100,
             width: 160,
+            height: 100,
         }
     }
 }
@@ -89,6 +89,23 @@ impl From<WmState> for WindowState {
             _ => unreachable!("Unknown state")
         }
     }
+}
+
+/// EWMH-defined window states.
+#[derive(Clone, Copy, Debug)]
+pub enum NetWindowState {
+    Modal,
+    Sticky,
+    MaxVert,
+    MaxHorz,
+    Shaded,
+    SkipTask,
+    SkipPager,
+    Hidden,
+    Fullscreen,
+    Above,
+    Below,
+    Urgent,
 }
 
 impl Default for WindowState {
@@ -113,6 +130,48 @@ impl From<LayoutType> for WinLayoutState {
         }
 
         Self::Tiled
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum ClientMessageData {
+    Byte([u8; 20]),
+    Word([u16; 10]),
+    DWord([u32; 5]),
+}
+
+impl ClientMessageData {
+    pub fn from_event(event: &xproto::ClientMessageEvent) -> Self {
+        let data = event.data();
+        match event.format() {
+            8 => {
+                Self::Byte(data.data8()[0..20]
+                .try_into().expect("Byte: Incorrect conversion"))
+            }
+            16 => {
+                Self::Word(data.data16()[0..10]
+                .try_into().expect("Word: Incorrect conversion"))
+            }
+            32 => {
+                Self::DWord(data.data32()[0..5]
+                .try_into().expect("DWord: Incorrect conversion"))
+            }
+            _ => {unreachable!()}
+        }
+    }
+
+    #[inline(always)]
+    pub fn is_8(&self) -> bool {
+        if let Self::Byte(_) = self {true} else {false}
+    }
+
+    #[inline(always)]
+    pub fn is_16(&self) -> bool {
+        if let Self::Word(_) = self {true} else {false}
+    }
+
+    pub fn is_32(&self) -> bool {
+        if let Self::DWord(_) = self {true} else {false}
     }
 }
 

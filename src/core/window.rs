@@ -8,7 +8,7 @@ use crate::x::core::{
     XWindow, 
     XWindowID
 };
-use crate::x::Icccm;
+use crate::x::{Icccm, Ewmh};
 use crate::utils;
 use crate::types::{
     WinLayoutState, 
@@ -117,6 +117,7 @@ pub struct Client {
     urgent: bool,
     transient_for: Option<XWindowID>,
     mapped_state: WindowState,
+    net_states: Vec<xcb::Atom>,
     layout_state: WinLayoutState,
     protocols: HashSet<xcb::Atom>,
 }
@@ -152,6 +153,7 @@ impl Client {
             transient_for: None,
             urgent: false,
             mapped_state: WindowState::Normal,
+            net_states: Vec::new(),
             layout_state: layout,
             protocols: HashSet::new(),
         }
@@ -171,6 +173,11 @@ impl Client {
             return true
         }
         false
+    }
+
+    #[inline(always)]
+    pub fn is_urgent(&self) -> bool {
+        self.urgent
     }
 
     #[inline]
@@ -248,8 +255,14 @@ impl Client {
         } else {
             WindowState::Normal
         };
+        self.net_states = if let Some(states) = conn.get_window_states(self.id()) {
+            states
+        } else {Vec::new()};
         if self.protocols.is_empty() {
             self.set_supported(conn);
+        }
+        if self.urgent {
+            self.set_border(conn, BorderStyle::Urgent);
         }
     }
 
@@ -305,6 +318,7 @@ impl Client {
 
     pub fn map(&mut self, conn: &XConn) {
         self.update_all_properties(conn);
+        self.update_geometry(conn);
         conn.change_window_attributes(
             self.id(), 
             &[(xcb::CW_EVENT_MASK, xcb::EVENT_MASK_PROPERTY_CHANGE)]

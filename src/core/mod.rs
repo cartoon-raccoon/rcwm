@@ -9,3 +9,6 @@ pub mod ring;
 pub use self::ring::{
     Ring, Selector,
 };
+
+pub use self::workspace::Workspace;
+pub use self::window::{Client, ClientRing};
