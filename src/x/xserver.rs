@@ -23,6 +23,7 @@ pub struct InternedAtoms {
     pub SUPPORTED: xcb::Atom,
     
     pub WM_DELETE_WINDOW: xcb::Atom,
+    pub WM_TAKE_FOCUS: xcb::Atom,
 
     pub WM_PROTOCOLS: xcb::Atom,
 
@@ -66,6 +67,11 @@ impl InternedAtoms {
             SUPPORTED: conn.SUPPORTED(),
 
             WM_DELETE_WINDOW: xcb::intern_atom(conn, false, "WM_DELETE_WINDOW")
+                .get_reply()
+                .unwrap_or_else(|e| panic!("{}", e))
+                .atom(),
+
+            WM_TAKE_FOCUS: xcb::intern_atom(conn, false, "WM_TAKE_FOCUS")
                 .get_reply()
                 .unwrap_or_else(|e| panic!("{}", e))
                 .atom(),
@@ -178,10 +184,17 @@ impl XConn {
             current_scr: idx,
         }
     }
+
+    /// Get a reference to the underlying XCB Connection.
+    pub fn get_raw(&self) -> &ewmh::Connection {
+        &self.conn
+    }
+    
     /// Gets the setup of the underlying xcb connection.
     pub fn get_setup(&self) -> xcb::Setup {
         self.conn.get_setup()
     }
+
     /// Get the root ID of the current screen.
     pub fn get_root_id(&self) -> XWindowID {
         self.conn.get_setup()
@@ -190,6 +203,7 @@ impl XConn {
             .expect("Could not get root id")
             .root()
     }
+    
     /// Get the root geometry (which is usually the screen resolution)
     pub fn get_root_geom(&self) -> Result<Geometry> {
         let root_id = self.get_root_id();
