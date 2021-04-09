@@ -203,7 +203,7 @@ impl XConn {
             .expect("Could not get root id")
             .root()
     }
-    
+
     /// Get the root geometry (which is usually the screen resolution)
     pub fn get_root_geom(&self) -> Result<Geometry> {
         let root_id = self.get_root_id();
@@ -330,6 +330,18 @@ impl XConn {
 
         xcb::set_input_focus(&self.conn, xcb::INPUT_FOCUS_POINTER_ROOT as u8, window_id, xcb::CURRENT_TIME);
     }
+
+    pub fn set_geometry(&self, window_id: XWindowID, geom :Geometry) {
+        self.configure_window(window_id, &utils::configure_resize(
+            geom.width as u32,
+            geom.height as u32,
+        ));
+
+        self.configure_window(window_id, &utils::configure_move(
+            geom.x as u32,
+            geom.y as u32,
+        ))
+    } 
 
     pub fn get_geometry(&self, window_id: XWindowID) -> Result<Geometry> {
         debug!("Getting geometry");
