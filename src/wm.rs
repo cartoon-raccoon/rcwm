@@ -7,9 +7,14 @@ use xcb_util::{
 };
 
 use crate::utils;
-use crate::types::{Direction, Geometry};
+use crate::core::Client;
+use crate::types::{
+    Direction, 
+    Geometry, 
+    ClientMessageData as CMData
+};
 use crate::x::core::{XConn, XWindowID};
-use crate::x::Ewmh;
+use crate::x::{ewmh, Ewmh};
 use crate::desktop::{Desktop, Screen};
 use crate::layout::LayoutType;
 use crate::config;
@@ -55,7 +60,8 @@ impl WindowManager {
 
         xconn.set_supported(screen_idx, &[
             xconn.atoms.WM_PROTOCOLS, 
-            xconn.atoms.WM_DELETE_WINDOW
+            xconn.atoms.WM_DELETE_WINDOW,
+            xconn.atoms.WM_TAKE_FOCUS,
         ]);
 
         xconn.grab_button(root_id, utils::ROOT_BUTTON_GRAB_MASK, xcb::BUTTON_INDEX_1, xcb::MOD_MASK_4, true);
@@ -137,7 +143,7 @@ impl WindowManager {
                     xcb::KEY_PRESS => self.on_key_press(xcb::cast_event(&event)),
                     xcb::BUTTON_PRESS => self.on_button_press(xcb::cast_event(&event)),
                     xcb::BUTTON_RELEASE => self.on_button_release(xcb::cast_event(&event)),
-                    xcb::CLIENT_MESSAGE => {debug!("Client message");}
+                    xcb::CLIENT_MESSAGE => self.on_client_message(xcb::cast_event(&event)),
                     unhandled => {
                         debug!("Unhandled event {}", unhandled);
                     }
@@ -210,39 +216,40 @@ impl WindowManager {
     }
 
     fn on_config_request(&mut self, event: &xcb::ConfigureRequestEvent) {
+        debug!("On configure request for window {}", event.window());
+
+        let mut geom = Geometry::from((0, 0, 160, 100));
+        let mut config_window_geom = false;
+        
+        if xcb::CONFIG_WINDOW_Y as u16 & event.value_mask() != 0 {
+            config_window_geom = true;
+            geom.y = event.y() as i32;
+        }
+        if xcb::CONFIG_WINDOW_X as u16 & event.value_mask() != 0 {
+            config_window_geom = true;
+            geom.x = event.x() as i32;
+        }
+        if xcb::CONFIG_WINDOW_WIDTH as u16 & event.value_mask() != 0 {
+            config_window_geom = true;
+            geom.width = event.width() as i32;
+        }
+        if xcb::CONFIG_WINDOW_HEIGHT as u16 & event.value_mask() != 0 {
+            config_window_geom = true;
+            geom.height = event.height() as i32;
+        }
+        if xcb::CONFIG_WINDOW_STACK_MODE as u16 & event.value_mask() != 0 {
+            debug!("Configure window stack mode");
+        }
+        if xcb::CONFIG_WINDOW_BORDER_WIDTH as u16 & event.value_mask() != 0 {
+            debug!("Configure window border width");
+        }
+        if xcb::CONFIG_WINDOW_SIBLING as u16 & event.value_mask() != 0 {
+            debug!("Configure window sibling");
+        }
+
         if let Some((ws, idx)) = self.desktop.retrieve_mut(event.window()) {
-            debug!("On configure request for window {}", event.window());
 
             let is_tiling = ws.is_tiling();
-            
-            let mut geom = Geometry::from((0, 0, 100, 160));
-            let mut config_window_geom = false;
-            
-            if xcb::CONFIG_WINDOW_Y as u16 & event.value_mask() != 0 {
-                config_window_geom = true;
-                geom.y = event.y() as i32;
-            }
-            if xcb::CONFIG_WINDOW_X as u16 & event.value_mask() != 0 {
-                config_window_geom = true;
-                geom.x = event.x() as i32;
-            }
-            if xcb::CONFIG_WINDOW_WIDTH as u16 & event.value_mask() != 0 {
-                config_window_geom = true;
-                geom.width = event.width() as i32;
-            }
-            if xcb::CONFIG_WINDOW_HEIGHT as u16 & event.value_mask() != 0 {
-                config_window_geom = true;
-                geom.height = event.height() as i32;
-            }
-            if xcb::CONFIG_WINDOW_STACK_MODE as u16 & event.value_mask() != 0 {
-                debug!("Configure window stack mode");
-            }
-            if xcb::CONFIG_WINDOW_BORDER_WIDTH as u16 & event.value_mask() != 0 {
-                debug!("Configure window border width");
-            }
-            if xcb::CONFIG_WINDOW_SIBLING as u16 & event.value_mask() != 0 {
-                debug!("Configure window sibling");
-            }
             
             let ref mut window = ws[idx];
 
@@ -264,8 +271,9 @@ impl WindowManager {
                 window.set_and_update_geometry(&self.conn, geom);
                 debug!("{:#?}", window);
             }
-
-
+        } else {
+            debug!("Config request is for untracked window");
+            self.conn.set_geometry(event.window(), geom);
         }
     }
 
@@ -282,28 +290,38 @@ impl WindowManager {
     fn map_window(&mut self, window: XWindowID) {
         if let Some(window_type) = self.conn.get_window_type(window) {
             if !(window_type.contains(&self.conn.atoms.WM_WINDOW_TYPE_NORMAL)||
-                 window_type.contains(&self.conn.atoms.WM_WINDOW_TYPE_DIALOG)||
                 window_type.contains(&self.conn.atoms.WM_WINDOW_TYPE_UTILITY)||
+                //window_type.contains(&self.conn.atoms.WM_WINDOW_TYPE_DIALOG) ||
                 window_type.contains(&self.conn.atoms.WM_WINDOW_TYPE_TOOLBAR)
                 ) || window_type.contains(&self.conn.atoms.WM_WINDOW_TYPE_SPLASH) {
-                if window_type.contains(&self.conn.atoms.WM_WINDOW_TYPE_NORMAL) {
-                    debug!("Window type has normal");
-                }
-                if window_type.contains(&self.conn.atoms.WM_WINDOW_TYPE_DIALOG) {
-                    debug!("Window type has dialog");
-                }
-                if window_type.contains(&self.conn.atoms.WM_WINDOW_TYPE_TOOLBAR) {
-                    debug!("Window type has toolbar");
-                }
                 debug!("Mapping but not tracking window {}", window);
 
-                self.conn.map_window(window);
+                self.map_untracked(window);
+                debug!("Geometry of window {}: {:?}", 
+                    window, self.conn.get_geometry(window).unwrap()
+                );
                 return
             }
+            if let Some(attrs) = self.conn.get_window_attributes(window) {
+                if attrs.override_redirect() {
+                    debug!("Window is not top-level, mapping but not tracking");
+                    self.map_untracked(window);
+                    debug!("Geometry of window {}: {:?}", 
+                    window, self.conn.get_geometry(window).unwrap()
+                );
+                    return
+                }
+            }
+            self.desktop.current_mut().add_window(&self.conn, &self.screen, window);
+        } else {
+            error!("Unable to get type for window {}, mapping but not tracking", window);
+            self.conn.map_window(window);
         }
+    }
 
-
-        self.desktop.current_mut().add_window(&self.conn, &self.screen, window);
+    fn map_untracked(&mut self, window: XWindowID) {
+        let mut win = Client::floating(window, &self.conn);
+        win.map(&self.conn);
     }
 
     fn on_unmap_notify(&mut self, event: &xcb::UnmapNotifyEvent) {
@@ -440,6 +458,25 @@ impl WindowManager {
         } else {
             return
         }
+    }
+
+    /// Handles a client message.
+    /// 
+    /// Should normally be used for updating EWMH stuff.
+    fn on_client_message(&mut self, event: &xcb::ClientMessageEvent) {
+        debug!("On client message for window {}", event.window());
+        if event.type_() == self.conn.atoms.WM_STATE {
+            debug!("Type is WM_STATE");
+            ewmh::handle_wm_state(
+                &self.conn, 
+                self.desktop.current_mut(), 
+                event.window(),
+                CMData::from_event(event)
+            )
+        } else {
+            debug!("Unhandled type {}", event.type_());
+        }
+
     }
 
     fn on_property_notify(&mut self, event: &xcb::PropertyNotifyEvent) {
