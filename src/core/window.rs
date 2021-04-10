@@ -12,6 +12,7 @@ use crate::x::{Icccm, Ewmh};
 use crate::utils;
 use crate::types::{
     WinLayoutState, 
+    NetWindowStates,
     WindowState,
     Geometry, 
     Ring, 
@@ -117,7 +118,7 @@ pub struct Client {
     urgent: bool,
     transient_for: Option<XWindowID>,
     mapped_state: WindowState,
-    net_states: Vec<xcb::Atom>,
+    net_states: NetWindowStates,
     layout_state: WinLayoutState,
     protocols: HashSet<xcb::Atom>,
 }
@@ -153,7 +154,7 @@ impl Client {
             transient_for: None,
             urgent: false,
             mapped_state: WindowState::Normal,
-            net_states: Vec::new(),
+            net_states: NetWindowStates::new(),
             layout_state: layout,
             protocols: HashSet::new(),
         }
@@ -255,15 +256,14 @@ impl Client {
         } else {
             WindowState::Normal
         };
-        self.net_states = if let Some(states) = conn.get_window_states(self.id()) {
-            states
-        } else {Vec::new()};
+        self.net_states = conn.get_window_states(self.id());
         if self.protocols.is_empty() {
             self.set_supported(conn);
         }
         if self.urgent {
             self.set_border(conn, BorderStyle::Urgent);
         }
+        debug!("Updated properties: {:#?}", self);
     }
 
     /// Checks and updates the dynamic properties of the window.
@@ -326,8 +326,23 @@ impl Client {
         conn.map_window(self.id());
     }
 
-    pub fn unmap(&self, conn: &XConn) {
+    pub fn unmap(&mut self, conn: &XConn) {
+        self.mapped_state = WindowState::Withdrawn;
         conn.unmap_window(self.id());
+    }
+
+    pub fn set_wm_states(&self, conn: &XConn) {
+        conn.set_wm_state(self.id(), &self.net_states);
+    }
+
+    pub(crate) fn add_wm_state(&mut self, state: xcb::Atom) {
+        self.net_states.add(state)
+    }
+
+    pub(crate) fn remove_wm_state(&mut self, state: xcb::Atom) {
+        if self.net_states.contains(state) {
+            self.net_states.remove(state);
+        }
     }
     
     /// Configure the `Client` using a provided connection

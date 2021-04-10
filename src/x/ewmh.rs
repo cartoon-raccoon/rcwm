@@ -5,13 +5,17 @@
 use xcb_util::ewmh;
 
 use crate::x::{XConn, XWindowID};
-use crate::core::{Workspace, Client};
-use crate::types::ClientMessageData as CMData;
+use crate::core::Workspace;
+use crate::types::{
+    ClientMessageData as CMData, 
+    NetWindowStates
+};
 
 pub trait Ewmh {
     fn get_window_type(&self, window: XWindowID) -> Option<Vec<xcb::Atom>>;
-    fn get_window_states(&self, window: XWindowID) -> Option<Vec<xcb::Atom>>;
+    fn get_window_states(&self, window: XWindowID) -> NetWindowStates;
     fn set_supported(&self, screen_idx: i32, atoms: &[xcb::Atom]);
+    fn set_wm_state(&self, window: XWindowID, atoms: &[xcb::Atom]);
 }
 
 impl Ewmh for XConn {
@@ -24,26 +28,39 @@ impl Ewmh for XConn {
         .map(|ok| ok.atoms().to_owned())
     }
 
-    fn get_window_states(&self, window: XWindowID) -> Option<Vec<xcb::Atom>> {
+    fn get_window_states(&self, window: XWindowID) -> NetWindowStates {
         debug!("Getting EWMH states for window {}", window);
 
-        ewmh::get_wm_state(&self.conn, window)
+        if let Some(states) = ewmh::get_wm_state(&self.conn, window)
         .get_reply().ok()
-        .map(|ok| ok.atoms().to_owned())
+        .map(|ok| ok.atoms().to_owned()) {
+            return NetWindowStates::from(states)
+        } else {
+            return NetWindowStates::new()
+        }
     }
 
     fn set_supported(&self, screen_idx: i32, atoms: &[xcb::Atom]) {
         ewmh::set_supported(&self.conn, screen_idx, atoms);
     }
+
+    fn set_wm_state(&self, window: XWindowID, atoms: &[xcb::Atom]) {
+        ewmh::set_wm_state(&self.conn, window, atoms);
+    }
 }
 
-pub fn handle_wm_state(
+// impl dyn Ewmh {
+//     fn change_window_state(&)
+// }
+
+/// Called from `wm::clientmessage`.
+pub(crate) fn handle_wm_state(
     conn: &XConn, 
     ws: &mut Workspace, 
     window: XWindowID,
     data: CMData,
 ) {
-    // Why did xcb_util have to implement it this way...
+    //todo: implement handling
     assert!(data.is_32());
 
     let raw = conn.get_raw();
@@ -62,14 +79,43 @@ pub fn handle_wm_state(
             resolve_state(raw, prop2);
         }
 
+        let win = ws.windows.lookup_mut(window);
+
         match action {
             ewmh::STATE_ADD => {
-                debug!("Add");
+                if let Some(win) = win {
+                    if prop1 != 0 {
+                        win.add_wm_state(prop1);
+                    }
+                    if prop2 != 0 {
+                        win.add_wm_state(prop2);
+                    }
+                    win.set_wm_states(conn);
+                } else {
+                    let mut states = conn.get_window_states(window);
+                    if prop1 != 0 {states.add(prop1);}
+                    if prop2 != 0 {states.add(prop2);}
+                    conn.set_wm_state(window, &states);
+                }
             }
             ewmh::STATE_REMOVE => {
-                debug!("Remove");
+                if let Some(win) = win {
+                    if prop1 != 0 {
+                        win.remove_wm_state(prop1);
+                    }
+                    if prop2 != 0 {
+                        win.remove_wm_state(prop2);
+                    }
+                    win.set_wm_states(conn);
+                } else {
+                    let mut states = conn.get_window_states(window);
+                    if prop1 != 0 {states.remove(prop1);}
+                    if prop2 != 0 {states.remove(prop2);}
+                    conn.set_wm_state(window, &states);
+                }
             }
             ewmh::STATE_TOGGLE => {
+                //todo: we need to remember the previous state of the window
                 debug!("Toggle");
             }
             _ => {unreachable!()}
@@ -79,6 +125,7 @@ pub fn handle_wm_state(
     }
 }
 
+//todo: make this return shit
 fn resolve_state(conn: &ewmh::Connection, state: xcb::Atom) {
     if state == conn.WM_STATE_MODAL() {
         debug!("State is modal");
