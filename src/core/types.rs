@@ -3,6 +3,8 @@ use std::convert::TryInto;
 use xcb_util::icccm::{self, WmState};
 use xcb::xproto;
 
+use std::ops::Deref;
+
 use crate::layout::LayoutType;
 use crate::x::core::XConn;
 use crate::WindowManager;
@@ -91,6 +93,55 @@ impl From<WmState> for WindowState {
     }
 }
 
+/// Convenience wrapper around a Vec of NetWindowStates.
+#[derive(Debug, Clone)]
+pub struct NetWindowStates {
+    states: Vec<xcb::Atom>,
+}
+
+impl NetWindowStates {
+    pub fn new() -> Self {
+        Self {
+            states: Vec::new()
+        }
+    }
+
+    pub fn contains(&self, prop: xcb::Atom) -> bool {
+        self.states.contains(&prop)
+    }
+
+    pub fn add(&mut self, prop: xcb::Atom) {
+        self.states.push(prop)
+    }
+
+    pub fn remove(&mut self, prop: xcb::Atom) -> xcb::Atom {
+        for (idx, atom) in self.states.iter().enumerate() {
+            if *atom == prop {
+                return self.states.remove(idx)
+            }
+        }
+        error!("Tried to remove atom not in states");
+        0
+    }
+}
+
+impl From<Vec<xcb::Atom>> for NetWindowStates {
+    fn from(from: Vec<xcb::Atom>) -> Self {
+        Self {
+            states: from
+        }
+    }
+}
+
+impl Deref for NetWindowStates {
+    type Target = [xcb::Atom];
+
+    fn deref(&self) -> &Self::Target {
+        self.states.as_slice()
+    }
+}
+
+//? This thing's existence is in question.
 /// EWMH-defined window states.
 #[derive(Clone, Copy, Debug)]
 pub enum NetWindowState {
@@ -99,13 +150,38 @@ pub enum NetWindowState {
     MaxVert,
     MaxHorz,
     Shaded,
-    SkipTask,
+    SkipTaskbar,
     SkipPager,
     Hidden,
     Fullscreen,
     Above,
     Below,
     Urgent,
+}
+
+impl NetWindowState {
+    pub fn from_atom(atom: xcb::Atom, conn: &XConn) -> Option<Self> {
+        let raw = conn.get_raw();
+        if atom == raw.WM_STATE_MODAL() {
+            return Some(Self::Modal)
+        } else if atom == raw.WM_STATE_STICKY() {
+            return Some(Self::Sticky)
+        } else if atom == raw.WM_STATE_MAXIMIZED_VERT() {
+            return Some(Self::MaxVert)
+        } else if atom == raw.WM_STATE_MAXIMIZED_HORZ() {
+            return Some(Self::MaxHorz)
+        } else if atom == raw.WM_STATE_SHADED() {
+            return Some(Self::Shaded)
+        } else if atom == raw.WM_STATE_SKIP_TASKBAR() {
+            return Some(Self::SkipTaskbar)
+        } else if atom == raw.WM_STATE_SKIP_PAGER() {
+            return Some(Self::SkipPager)
+        } else if atom == raw.WM_STATE_HIDDEN() {
+            return Some(Self::Hidden)
+        } else {
+            return None
+        }
+    }
 }
 
 impl Default for WindowState {
