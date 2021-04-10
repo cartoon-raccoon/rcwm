@@ -3,7 +3,7 @@
 #[macro_use]
 mod log;
 
-mod wm;
+mod manager;
 mod x;
 mod core;
 mod utils;
@@ -17,7 +17,7 @@ pub use crate::core::{
 #[macro_use]
 extern crate log as logger;
 
-use wm::WindowManager;
+use manager::WindowManager;
 
 use xcb::base::Connection;
 use xcb_util::ewmh;
