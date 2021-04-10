@@ -90,7 +90,7 @@ pub fn del_window(
     debug!("Got window with idx {}", idx);
 
     // internally remove window from tracking
-    let window = ws.windows.pop(idx);
+    let mut window = ws.windows.pop(idx);
 
     // disable events and unmap the window
     window.change_attributes(conn, &utils::disable_events());
