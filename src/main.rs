@@ -3,12 +3,12 @@
 #[macro_use]
 mod log;
 
-mod manager;
-mod x;
-mod core;
-mod utils;
-mod layout;
-mod config;
+pub mod manager;
+pub mod x;
+pub mod core;
+pub mod utils;
+pub mod layout;
+pub mod config;
 
 pub use crate::core::{
     window, workspace, desktop, types,

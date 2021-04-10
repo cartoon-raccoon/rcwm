@@ -1,5 +1,5 @@
 #[macro_use]
-pub mod log;
+mod log;
 
 pub mod core;
 pub mod layout;
