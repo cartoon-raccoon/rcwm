@@ -62,6 +62,7 @@ impl WindowManager {
             xconn.atoms.WM_PROTOCOLS, 
             xconn.atoms.WM_DELETE_WINDOW,
             xconn.atoms.WM_TAKE_FOCUS,
+            xconn.atoms.WM_STATE,
         ]);
 
         xconn.grab_button(root_id, utils::ROOT_BUTTON_GRAB_MASK, xcb::BUTTON_INDEX_1, xcb::MOD_MASK_4, true);
@@ -289,9 +290,10 @@ impl WindowManager {
 
     fn map_window(&mut self, window: XWindowID) {
         if let Some(window_type) = self.conn.get_window_type(window) {
+            // windows to not manage at all
             if !(window_type.contains(&self.conn.atoms.WM_WINDOW_TYPE_NORMAL)||
                 window_type.contains(&self.conn.atoms.WM_WINDOW_TYPE_UTILITY)||
-                //window_type.contains(&self.conn.atoms.WM_WINDOW_TYPE_DIALOG) ||
+                window_type.contains(&self.conn.atoms.WM_WINDOW_TYPE_DIALOG) ||
                 window_type.contains(&self.conn.atoms.WM_WINDOW_TYPE_TOOLBAR)
                 ) || window_type.contains(&self.conn.atoms.WM_WINDOW_TYPE_SPLASH) {
                 debug!("Mapping but not tracking window {}", window);
@@ -302,6 +304,16 @@ impl WindowManager {
                 );
                 return
             }
+            // special case for dialog windows
+            if window_type.contains(&self.conn.atoms.WM_WINDOW_TYPE_DIALOG) {
+                debug!("Window is dialog, managing but not tiling");
+                let mut dialog = Client::floating(window, &self.conn);
+                dialog.map(&self.conn);
+                dialog.configure(&self.conn, &utils::stack_above());
+                self.desktop.current_mut().push_window(dialog);
+                return
+            }
+            // do not manage if window is not top-level
             if let Some(attrs) = self.conn.get_window_attributes(window) {
                 if attrs.override_redirect() {
                     debug!("Window is not top-level, mapping but not tracking");
@@ -482,7 +494,7 @@ impl WindowManager {
     fn on_property_notify(&mut self, event: &xcb::PropertyNotifyEvent) {
         let window = event.window();
         if let Some(win) = self.desktop.current_mut().windows.lookup(window) {
-            debug!("Property change for window {:?}", win);
+            debug!("Property change for window {:#?}", win);
         }
     }
 }
