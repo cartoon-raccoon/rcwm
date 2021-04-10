@@ -115,7 +115,35 @@ impl Workspace {
         self.relayout(conn, scr);
     }
 
-    pub fn push_window(&mut self, window: Client) {
+    pub fn activate(&mut self, conn: &XConn, screen: &Screen) {
+        (self._activate)(conn, self, screen);
+    }
+
+    pub fn deactivate(&mut self, conn: &XConn) {
+        (self._deactivate)(conn, self);
+    }
+
+    pub fn add_window(&mut self, conn: &XConn, screen: &Screen, id: XWindowID) {
+        (self._add_window)(conn, self, screen, id);
+        debug!("Current master is {:?}", self.master);
+        debug!("{:#?}", &self.windows);
+    }
+
+    pub fn del_window(&mut self, 
+        conn: &XConn, 
+        screen: &Screen, 
+        id: XWindowID, 
+        idx: usize
+    ) -> Client {
+        let window = (self._del_window)(conn, self, screen, id, idx);
+        debug!("Current master is {:?}", self.master);
+        debug!("{:#?}", self.windows);
+        window
+    }
+
+    /// Pushes a window directly to the workspace.
+    /// Skips all additional checks.
+    pub(crate) fn push_window(&mut self, window: Client) {
         function_ends!("[start] workspace::push_window");
         if let LayoutType::Floating = self.layout {
             self.windows.push(window);
@@ -191,32 +219,6 @@ impl Workspace {
             return true
         }
         false
-    }
-
-    pub fn activate(&mut self, conn: &XConn, screen: &Screen) {
-        (self._activate)(conn, self, screen);
-    }
-
-    pub fn deactivate(&mut self, conn: &XConn) {
-        (self._deactivate)(conn, self);
-    }
-
-    pub fn add_window(&mut self, conn: &XConn, screen: &Screen, id: XWindowID) {
-        (self._add_window)(conn, self, screen, id);
-        debug!("Current master is {:?}", self.master);
-        debug!("{:#?}", &self.windows);
-    }
-
-    pub fn del_window(&mut self, 
-        conn: &XConn, 
-        screen: &Screen, 
-        id: XWindowID, 
-        idx: usize
-    ) -> Client {
-        let window = (self._del_window)(conn, self, screen, id, idx);
-        debug!("Current master is {:?}", self.master);
-        debug!("{:#?}", self.windows);
-        window
     }
 
     pub fn toggle_focused_state(&mut self, conn: &XConn, screen: &Screen) {
