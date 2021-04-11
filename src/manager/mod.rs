@@ -1,5 +1,6 @@
 //! This module defines WindowManager, the main object that runs the
 //! event loop in RaccoonWM.
+pub mod event;
 
 use xcb_util::{
     ewmh::Connection,
@@ -11,9 +12,12 @@ use crate::core::Client;
 use crate::types::{
     Direction, 
     Geometry, 
+};
+use crate::x::core::{
+    XConn, 
+    XWindowID, 
     ClientMessageData as CMData
 };
-use crate::x::core::{XConn, XWindowID};
 use crate::x::{ewmh, Ewmh};
 use crate::desktop::{Desktop, Screen};
 use crate::layout::LayoutType;
