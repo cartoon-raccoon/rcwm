@@ -1,12 +1,12 @@
 //! This module contains the Ewmh trait, which implements methods 
 //! that expose EWMH functionality.
-//! Currently implemented by XConn.
+//! Currently implemented by XCBConnection.
 
 use xcb_util::ewmh;
 
 use crate::x::core::{
     Atom,
-    XConn, 
+    XCBConnection, 
     XWindowID, 
     ClientMessageData as CMData
 };
@@ -22,7 +22,7 @@ pub trait Ewmh {
     fn set_wm_state(&self, window: XWindowID, atoms: &[Atom]);
 }
 
-impl Ewmh for XConn {
+impl Ewmh for XCBConnection {
     //fn get_wm_name()
     fn get_window_type(&self, window: XWindowID) -> Option<Vec<Atom>> {
         debug!("Getting type for window {}", window);
@@ -59,7 +59,7 @@ impl Ewmh for XConn {
 
 /// Called from `wm::clientmessage`.
 pub(crate) fn handle_wm_state(
-    conn: &XConn, 
+    conn: &XCBConnection, 
     ws: &mut Workspace, 
     window: XWindowID,
     data: CMData,

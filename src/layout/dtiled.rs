@@ -1,4 +1,4 @@
-use crate::x::core::{XConn, XWindowID};
+use crate::x::core::{XCBConnection, XWindowID};
 use crate::workspace::Workspace;
 use crate::window::Client;
 use crate::types::{Geometry, Direction};
@@ -7,7 +7,7 @@ use crate::utils;
 
 use super::BORDER_WIDTH;
 
-pub fn activate(conn: &XConn, ws: &mut Workspace, screen: &Screen) {
+pub fn activate(conn: &XCBConnection, ws: &mut Workspace, screen: &Screen) {
     function_ends!("[start] dtiled::activate");
     // we cannot use the base activate function here as it cannot
     // account for when a new window is sent to the workspace from another
@@ -28,14 +28,14 @@ pub fn activate(conn: &XConn, ws: &mut Workspace, screen: &Screen) {
     function_ends!("[end] dtiled::activate");
 }
 
-pub fn deactivate(conn: &XConn, ws: &mut Workspace) {
+pub fn deactivate(conn: &XCBConnection, ws: &mut Workspace) {
     function_ends!("[start] dtiled::deactivate");
     // no special treatment needed for this one.
     super::deactivate(conn, ws);
     function_ends!("[end] dtiled::deactivate");
 }
 
-pub fn add_window(conn: &XConn, ws: &mut Workspace, screen: &Screen, window_id: XWindowID) {
+pub fn add_window(conn: &XCBConnection, ws: &mut Workspace, screen: &Screen, window_id: XWindowID) {
     function_ends!("[start] dtiled::add_window");
     // Internally create a new window and set its supported protocols
     let window = Client::tiled(window_id, conn);
@@ -80,7 +80,7 @@ pub fn add_window(conn: &XConn, ws: &mut Workspace, screen: &Screen, window_id: 
 }
 
 pub fn del_window(
-    conn: &XConn,
+    conn: &XCBConnection,
     ws: &mut Workspace,
     screen: &Screen,
     window_id: XWindowID,
@@ -139,16 +139,16 @@ pub fn del_window(
     //super::floating::del_window(conn, ws, screen, window_id, idx)
 }
 
-pub fn window_focus(conn: &XConn, ws: &mut Workspace, window: XWindowID) {
+pub fn window_focus(conn: &XCBConnection, ws: &mut Workspace, window: XWindowID) {
     // todo: placeholder
     super::floating::window_focus(conn, ws, window)
 }
 
-pub fn cycle_focus(conn: &XConn, ws: &mut Workspace, direction: Direction) {
+pub fn cycle_focus(conn: &XCBConnection, ws: &mut Workspace, direction: Direction) {
     super::cycle_focus(conn, ws, direction);
 }
 
-pub fn relayout(conn: &XConn, ws: &mut Workspace, screen: &Screen) {
+pub fn relayout(conn: &XCBConnection, ws: &mut Workspace, screen: &Screen) {
     let root_geom = conn.get_root_geom().expect("Could not get root geom");
     calculate_geoms(ws, screen, root_geom);
     ws.windows.iter_mut().for_each(|win| win.update_geometry(conn));

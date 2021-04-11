@@ -5,7 +5,7 @@ use std::collections::HashSet;
 
 use crate::x::core::{
     Atom,
-    XConn,
+    XCBConnection,
     XWindow, 
     XWindowID
 };
@@ -132,15 +132,15 @@ impl PartialEq for Client {
 
 //todo: fix your calculations, they are deeply broken.
 impl Client {
-    pub fn tiled(from: XWindowID, conn: &XConn) -> Self {
+    pub fn tiled(from: XWindowID, conn: &XCBConnection) -> Self {
         Self::new(from, conn, WinLayoutState::Tiled)
     }
 
-    pub fn floating(from: XWindowID, conn: &XConn) -> Self {
+    pub fn floating(from: XWindowID, conn: &XCBConnection) -> Self {
         Self::new(from, conn, WinLayoutState::Floating)
     }
 
-    fn new(from: XWindowID, conn: &XConn, layout: WinLayoutState) -> Self {
+    fn new(from: XWindowID, conn: &XCBConnection, layout: WinLayoutState) -> Self {
         let properties = conn.get_client_properties(from);
         Self {
             xwindow: XWindow::from(from),
@@ -228,7 +228,7 @@ impl Client {
         self.xwindow.geom.width
     }
 
-    pub fn update_all_properties(&mut self, conn: &XConn) {
+    pub fn update_all_properties(&mut self, conn: &XCBConnection) {
         let properties = conn.get_client_properties(self.id());
         let initial_geom = if let Some(sizes) = properties.wm_size_hints() {
             debug!("Got size hints: {:#?}", sizes);
@@ -275,7 +275,7 @@ impl Client {
     /// - WM_ICON_NAME
     /// - WM_CLASS
     /// - WM_HINTS.Urgency
-    pub fn update_dynamic(&mut self, conn: &XConn) {
+    pub fn update_dynamic(&mut self, conn: &XCBConnection) {
         self.name = conn.get_wm_name(self.id());
         self.icon_name = conn.get_wm_icon_name(self.id());
         self.class = if let Some(class) = conn.get_wm_class(self.id()) {
@@ -295,7 +295,7 @@ impl Client {
         self.initial_geom = geom;
     }
 
-    pub fn set_border(&mut self, conn: &XConn, border: BorderStyle) {
+    pub fn set_border(&mut self, conn: &XCBConnection, border: BorderStyle) {
         use BorderStyle::*;
 
         match border {
@@ -317,7 +317,7 @@ impl Client {
         }
     }
 
-    pub fn map(&mut self, conn: &XConn) {
+    pub fn map(&mut self, conn: &XCBConnection) {
         self.update_all_properties(conn);
         self.update_geometry(conn);
         conn.change_window_attributes(
@@ -327,12 +327,12 @@ impl Client {
         conn.map_window(self.id());
     }
 
-    pub fn unmap(&mut self, conn: &XConn) {
+    pub fn unmap(&mut self, conn: &XCBConnection) {
         self.mapped_state = WindowState::Withdrawn;
         conn.unmap_window(self.id());
     }
 
-    pub fn set_wm_states(&self, conn: &XConn) {
+    pub fn set_wm_states(&self, conn: &XCBConnection) {
         conn.set_wm_state(self.id(), &self.net_states);
     }
 
@@ -350,19 +350,19 @@ impl Client {
     /// 
     /// Use `Client::set_geometry` and `Client::update_geometry`
     /// to change client geometry instead of this method.
-    pub fn configure(&self, conn: &XConn, attrs: &[(u16, u32)]) {
+    pub fn configure(&self, conn: &XCBConnection, attrs: &[(u16, u32)]) {
         conn.configure_window(self.id(), attrs);
     }
 
     /// Change client attributes.
-    pub fn change_attributes(&self, conn: &XConn, attrs: &[(u32, u32)]) {
+    pub fn change_attributes(&self, conn: &XCBConnection, attrs: &[(u32, u32)]) {
         conn.change_window_attributes(self.id(), attrs)
     }
 
     /// Resize the window using _changes_ in height and width.
     /// 
     /// Does not do bounds checking.
-    pub fn do_resize(&mut self, conn: &XConn, _scr: &Screen, dx: i32, dy: i32) {
+    pub fn do_resize(&mut self, conn: &XCBConnection, _scr: &Screen, dx: i32, dy: i32) {
         self.xwindow.update_height(dy);
         self.xwindow.update_width(dx);
 
@@ -391,7 +391,7 @@ impl Client {
     /// Move the window using _changes_ in window coordinates.
     /// 
     /// Does not do bounds checking.
-    pub fn do_move(&mut self, conn: &XConn, _scr: &Screen, dx: i32, dy: i32) {
+    pub fn do_move(&mut self, conn: &XCBConnection, _scr: &Screen, dx: i32, dy: i32) {
         self.xwindow.update_pos_y(dy);
         self.xwindow.update_pos_x(dx);
 
@@ -426,7 +426,7 @@ impl Client {
     /// Updates its geometry on the X server.
     /// 
     /// Normally called after `Client::set_geometry`.
-    pub fn update_geometry(&self, conn: &XConn) {
+    pub fn update_geometry(&self, conn: &XCBConnection) {
         conn.configure_window(self.xwindow.id, &utils::configure_resize(
             self.width() as u32,
             self.height() as u32,
@@ -439,13 +439,13 @@ impl Client {
     }
 
     /// Updates and sets the Client geometry with a given Geometry.
-    pub fn set_and_update_geometry(&mut self, conn: &XConn, geom: Geometry) {
+    pub fn set_and_update_geometry(&mut self, conn: &XCBConnection, geom: Geometry) {
         self.set_geometry(geom);
         self.update_geometry(conn);
     }
 
     /// Sets the supported protocols for the client.
-    pub fn set_supported(&mut self, conn: &XConn) {
+    pub fn set_supported(&mut self, conn: &XCBConnection) {
         if let Some(protocols) = conn.get_wm_protocols(self.id()) {
             for protocol in protocols {
                 self.protocols.insert(protocol);

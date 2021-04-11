@@ -9,7 +9,7 @@
 //! algorithms to resize windows.
 
 use crate::workspace::Workspace;
-use crate::x::core::{XWindowID, XConn};
+use crate::x::core::{XWindowID, XCBConnection};
 use crate::layout::LayoutType;
 use crate::types::{Ring, Direction};
 use crate::x::XWindow;
@@ -90,7 +90,7 @@ impl Desktop {
     }
 
     pub fn cycle_workspace(&mut self, 
-        conn: &XConn, 
+        conn: &XCBConnection, 
         scr: &Screen, 
         direction: Direction
     ) {
@@ -122,7 +122,7 @@ impl Desktop {
     }
 
     /// Switch to a given workspace.
-    pub fn goto(&mut self, conn: &XConn, scr: &Screen, idx: usize) {
+    pub fn goto(&mut self, conn: &XCBConnection, scr: &Screen, idx: usize) {
         if self.current == idx {
             return
         }
@@ -140,7 +140,7 @@ impl Desktop {
     }
 
     /// Send a window to a given workspace.
-    pub fn send_window_to(&mut self, conn: &XConn, scr: &Screen, idx: usize) {
+    pub fn send_window_to(&mut self, conn: &XCBConnection, scr: &Screen, idx: usize) {
         debug!("Attempting to send window to workspace {}", idx);
         if let Some(window) = self.current_mut().take_focused_window(conn, scr) {
             debug!("Sending window {} to workspace {}", window.id(), idx);

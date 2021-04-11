@@ -22,7 +22,7 @@ macro_rules! cast {
 
 /// Holds a handle to an XCB connection, as well as other attributes
 /// about the window manager.
-pub struct XConn {
+pub struct XCBConnection {
     pub(crate) conn: ewmh::Connection,
     pub atoms: InternedAtoms,
     pub root: XWindowID,
@@ -30,7 +30,7 @@ pub struct XConn {
     pub current_scr: i32,
 }
 
-impl XConn {
+impl XCBConnection {
     /// Creates a new X Connection.
     pub fn new(xconn: ewmh::Connection, idx: i32) -> Self {
         let atoms = InternedAtoms::new(&xconn);

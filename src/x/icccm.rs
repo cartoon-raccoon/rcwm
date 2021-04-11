@@ -1,14 +1,14 @@
 //! This module contains the Icccm trait, which implements methods 
 //! that expose ICCCM functionality.
-//! Currently implemented by XConn.
+//! Currently implemented by XCBConnection.
 
 use xcb_util::icccm;
 
-use crate::x::{XConn, XWindowID, Atom};
+use crate::x::{XCBConnection, XWindowID, Atom};
 use crate::types::{XWinProperties, WindowState};
 
 /// Exposes ICCCM functionality for an object holding an XCB connection.
-/// Mainly used to expose ICCCM functionality for XConn only when needed.
+/// Mainly used to expose ICCCM functionality for XCBConnection only when needed.
 /// For more information on what these methods return, consult the
 /// [ICCCM](https://www.x.org/releases/X11R7.6/doc/xorg-docs/specs/ICCCM/icccm.html)
 /// reference.
@@ -28,7 +28,7 @@ pub trait Icccm {
     fn get_urgency(&self, window: XWindowID) -> bool;
 }
 
-impl Icccm for XConn {
+impl Icccm for XCBConnection {
     fn get_client_properties(&self, window: XWindowID) -> XWinProperties {
         debug!("Getting client properties for window {}", window);
         //todo: get wm_transient_for

@@ -10,7 +10,7 @@ use std::ops::{Index, IndexMut};
 use crate::window::{Client, ClientRing};
 use crate::types::Direction;
 use crate::desktop::Screen;
-use crate::x::core::{XConn, XWindowID};
+use crate::x::core::{XCBConnection, XWindowID};
 use crate::utils;
 
 use crate::layout::{self, *};
@@ -22,13 +22,13 @@ pub struct Workspace {
     pub(crate) master: Option<XWindowID>,
     pub(crate) layout: LayoutType,
 
-    _activate: fn(&XConn, &mut Workspace, &Screen),
-    _deactivate: fn(&XConn, &mut Workspace),
-    _add_window: fn(&XConn, &mut Workspace, &Screen, XWindowID),
-    _del_window: fn(&XConn, &mut Workspace, &Screen, XWindowID, usize) -> Client,
-    _focus_window: fn(&XConn, &mut Workspace, XWindowID),
-    _relayout: fn(&XConn, &mut Workspace, &Screen),
-    _cycle_focus: fn(&XConn, &mut Workspace, Direction),
+    _activate: fn(&XCBConnection, &mut Workspace, &Screen),
+    _deactivate: fn(&XCBConnection, &mut Workspace),
+    _add_window: fn(&XCBConnection, &mut Workspace, &Screen, XWindowID),
+    _del_window: fn(&XCBConnection, &mut Workspace, &Screen, XWindowID, usize) -> Client,
+    _focus_window: fn(&XCBConnection, &mut Workspace, XWindowID),
+    _relayout: fn(&XCBConnection, &mut Workspace, &Screen),
+    _cycle_focus: fn(&XCBConnection, &mut Workspace, Direction),
 }
 
 impl Default for Workspace {
@@ -87,7 +87,7 @@ impl Workspace {
     }
 
     /// Changes a workspace's layout.
-    pub fn set_layout(&mut self, layout: LayoutType, conn: &XConn, scr: &Screen) {
+    pub fn set_layout(&mut self, layout: LayoutType, conn: &XCBConnection, scr: &Screen) {
         match layout {
             LayoutType::Floating => {
                 self.layout = layout;
@@ -115,22 +115,22 @@ impl Workspace {
         self.relayout(conn, scr);
     }
 
-    pub fn activate(&mut self, conn: &XConn, screen: &Screen) {
+    pub fn activate(&mut self, conn: &XCBConnection, screen: &Screen) {
         (self._activate)(conn, self, screen);
     }
 
-    pub fn deactivate(&mut self, conn: &XConn) {
+    pub fn deactivate(&mut self, conn: &XCBConnection) {
         (self._deactivate)(conn, self);
     }
 
-    pub fn add_window(&mut self, conn: &XConn, screen: &Screen, id: XWindowID) {
+    pub fn add_window(&mut self, conn: &XCBConnection, screen: &Screen, id: XWindowID) {
         (self._add_window)(conn, self, screen, id);
         debug!("Current master is {:?}", self.master);
         debug!("{:#?}", &self.windows);
     }
 
     pub fn del_window(&mut self, 
-        conn: &XConn, 
+        conn: &XCBConnection, 
         screen: &Screen, 
         id: XWindowID, 
         idx: usize
@@ -221,7 +221,7 @@ impl Workspace {
         false
     }
 
-    pub fn toggle_focused_state(&mut self, conn: &XConn, screen: &Screen) {
+    pub fn toggle_focused_state(&mut self, conn: &XCBConnection, screen: &Screen) {
         debug!("Toggling state of focused window {:#?}", self.windows.focused());
         let master = self.master;
         // If we have a focused window
@@ -265,7 +265,7 @@ impl Workspace {
     }
 
     pub fn take_focused_window(&mut self,
-        conn: &XConn,
+        conn: &XCBConnection,
         screen: &Screen,
     ) -> Option<Client> {
         if let Some(window) = self.windows.focused() {
@@ -279,22 +279,22 @@ impl Workspace {
         }
     }
 
-    pub fn focus_window(&mut self, conn: &XConn, _screen: &Screen, id: XWindowID) {
+    pub fn focus_window(&mut self, conn: &XCBConnection, _screen: &Screen, id: XWindowID) {
         debug!("Focusing window in workspace {}", id);
 
         (self._focus_window)(conn, self, id);
     }
 
-    pub fn relayout(&mut self, conn: &XConn, scr: &Screen) {
+    pub fn relayout(&mut self, conn: &XCBConnection, scr: &Screen) {
         (self._relayout)(conn, self, scr);
     }
 
-    pub fn cycle_focus(&mut self, conn: &XConn, direction: Direction) {
+    pub fn cycle_focus(&mut self, conn: &XCBConnection, direction: Direction) {
         (self._cycle_focus)(conn, self, direction);
     }
 
     pub fn cycle_master(&mut self, 
-        conn: &XConn, 
+        conn: &XCBConnection, 
         screen: &Screen, 
         direction: Direction
     ) {

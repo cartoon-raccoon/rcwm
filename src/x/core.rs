@@ -4,7 +4,7 @@ use xcb_util::ewmh;
 
 use crate::types::Geometry;
 
-pub use super::xserver::XConn;
+pub use super::xserver::XCBConnection;
 pub use super::event::*;
 
 pub type Atom = xcb::Atom;
@@ -113,8 +113,8 @@ impl From<XWindowID> for XWindow {
 }
 
 impl XWindow {
-    /// Sets the geometry using a provided XConn.
-    pub fn set_geometry_conn(&mut self, conn: &XConn) {
+    /// Sets the geometry using a provided XCBConnection.
+    pub fn set_geometry_conn(&mut self, conn: &XCBConnection) {
         match conn.get_geometry(self.id) {
             Ok(geom) => {
                 debug!(

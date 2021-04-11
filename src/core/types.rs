@@ -5,7 +5,7 @@ use xcb::xproto;
 use std::ops::Deref;
 
 use crate::layout::LayoutType;
-use crate::x::{XConn, Atom};
+use crate::x::{XCBConnection, Atom};
 use crate::WindowManager;
 
 pub use crate::core::{Ring, Selector};
@@ -166,7 +166,7 @@ pub enum NetWindowState {
 }
 
 impl NetWindowState {
-    pub fn from_atom(atom: Atom, conn: &XConn) -> Option<Self> {
+    pub fn from_atom(atom: Atom, conn: &XCBConnection) -> Option<Self> {
         let raw = conn.get_raw();
         if atom == raw.WM_STATE_MODAL() {
             return Some(Self::Modal)
@@ -239,8 +239,8 @@ pub enum WindowType {
 }
 
 impl WindowType {
-    /// Gets the atom type from an atom and an XConn.
-    pub fn from_atom(atom: Atom, conn: &XConn) -> Option<Self> {
+    /// Gets the atom type from an atom and an XCBConnection.
+    pub fn from_atom(atom: Atom, conn: &XCBConnection) -> Option<Self> {
         use WindowType::*;
 
         if atom == conn.atoms.WM_WINDOW_TYPE_DESKTOP {

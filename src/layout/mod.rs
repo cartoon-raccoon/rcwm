@@ -3,7 +3,7 @@
 pub(crate) mod floating;
 pub(crate) mod dtiled;
 
-use crate::x::core::{XConn, XWindowID};
+use crate::x::core::{XCBConnection, XWindowID};
 use crate::types::{Direction, BorderStyle};
 use crate::workspace::Workspace;
 use crate::desktop::Screen;
@@ -23,7 +23,7 @@ pub enum LayoutType {
     MTiled,
 }
 
-fn window_stack_and_focus(ws: &mut Workspace, conn: &XConn, window: XWindowID) {
+fn window_stack_and_focus(ws: &mut Workspace, conn: &XCBConnection, window: XWindowID) {
     use BorderStyle::*;
     // disable events
     conn.change_window_attributes(window, &utils::disable_events());
@@ -48,7 +48,7 @@ fn window_stack_and_focus(ws: &mut Workspace, conn: &XConn, window: XWindowID) {
 /// The base activate function.
 /// 
 /// Sequentially maps every window to the screen.
-pub(crate) fn activate(conn: &XConn, ws: &mut Workspace, screen: &Screen) {
+pub(crate) fn activate(conn: &XCBConnection, ws: &mut Workspace, screen: &Screen) {
     if ws.windows.is_empty() {
         return
     }
@@ -83,7 +83,7 @@ pub(crate) fn activate(conn: &XConn, ws: &mut Workspace, screen: &Screen) {
 /// The base deactivate function.
 /// 
 /// Sequentially unmaps every window in reverse.
-pub(crate) fn deactivate(conn: &XConn, ws: &mut Workspace) {
+pub(crate) fn deactivate(conn: &XCBConnection, ws: &mut Workspace) {
     for window in ws.windows.iter() {
         conn.change_window_attributes(window.id(), &utils::disable_events());
 
@@ -93,7 +93,7 @@ pub(crate) fn deactivate(conn: &XConn, ws: &mut Workspace) {
     }
 }
 
-pub(crate) fn cycle_focus(conn: &XConn, ws: &mut Workspace, direction: Direction) {
+pub(crate) fn cycle_focus(conn: &XCBConnection, ws: &mut Workspace, direction: Direction) {
     use BorderStyle::*;
 
     //change currently focused border colour to unfocused

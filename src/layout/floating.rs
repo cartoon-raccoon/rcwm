@@ -1,4 +1,4 @@
-use crate::x::core::{XConn, XWindowID};
+use crate::x::core::{XCBConnection, XWindowID};
 use crate::workspace::Workspace;
 use crate::window::Client;
 use crate::types::{Direction, BorderStyle};
@@ -7,15 +7,15 @@ use crate::utils;
 
 use super::BORDER_WIDTH;
 
-pub fn activate(conn: &XConn, ws: &mut Workspace, screen: &Screen) {
+pub fn activate(conn: &XCBConnection, ws: &mut Workspace, screen: &Screen) {
     super::activate(conn, ws, screen)
 }
 
-pub fn deactivate(conn: &XConn, ws: &mut Workspace) {
+pub fn deactivate(conn: &XCBConnection, ws: &mut Workspace) {
     super::deactivate(conn, ws)
 }
 
-pub fn add_window(conn: &XConn, ws: &mut Workspace, screen: &Screen, window_id: XWindowID) {
+pub fn add_window(conn: &XCBConnection, ws: &mut Workspace, screen: &Screen, window_id: XWindowID) {
     let mut window = Client::floating(window_id, conn);
 
     window.set_supported(conn);
@@ -56,7 +56,7 @@ pub fn add_window(conn: &XConn, ws: &mut Workspace, screen: &Screen, window_id: 
 #[allow(mutable_borrow_reservation_conflict)]
 //* this ^^^ should be fixed
 pub fn del_window(
-    conn: &XConn, 
+    conn: &XCBConnection, 
     ws: &mut Workspace, 
     _screen: &Screen, 
     window_id: XWindowID,
@@ -82,7 +82,7 @@ pub fn del_window(
     window
 }
 
-pub fn window_focus(conn: &XConn, ws: &mut Workspace, window: XWindowID) {
+pub fn window_focus(conn: &XCBConnection, ws: &mut Workspace, window: XWindowID) {
 
     if let Some(idx) = ws.windows.get_idx(window) {
         debug!("Found window {}", window);
@@ -97,11 +97,11 @@ pub fn window_focus(conn: &XConn, ws: &mut Workspace, window: XWindowID) {
     }
 }
 
-pub fn cycle_focus(conn: &XConn, ws: &mut Workspace, direction: Direction) {
+pub fn cycle_focus(conn: &XCBConnection, ws: &mut Workspace, direction: Direction) {
     super::cycle_focus(conn, ws, direction)
 }
 
-pub fn relayout(_conn: &XConn, _ws: &mut Workspace, _screen: &Screen) {
+pub fn relayout(_conn: &XCBConnection, _ws: &mut Workspace, _screen: &Screen) {
     //todo: if coming from tiling, 
     //todo: we restore windows to their ICCCM-defined geometries
 }
