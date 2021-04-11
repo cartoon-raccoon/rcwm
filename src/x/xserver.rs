@@ -6,17 +6,22 @@ use xcb_util::keysyms::KeySymbols;
 use anyhow::{Context, Result};
 
 use std::ops::Index;
+use std::convert::TryFrom;
 
 use crate::window::Client;
 use crate::utils;
-use crate::types::Geometry;
+use crate::types::{Geometry, Point};
 
 pub use super::event::*;
 
-// #[derive(Clone, Copy, Debug)]
-// pub enum CursorIndex {
-//     LeftCursor,
-// }
+// used for casting events and stuff
+macro_rules! cast {
+    ($etype:ty, $event:expr) => {
+        unsafe {xcb::cast_event::<$etype>(&$event)}
+    };
+}
+
+
 pub type Atom = xcb::Atom;
 
 /// The list of atoms interned from the X Server by the WM.
@@ -172,6 +177,7 @@ impl XWindow {
 pub struct XConn {
     pub(crate) conn: ewmh::Connection,
     pub atoms: InternedAtoms,
+    pub root: XWindowID,
     pub cursor: xcb::Cursor,
     pub current_scr: i32,
 }
@@ -180,9 +186,15 @@ impl XConn {
     /// Creates a new X Connection.
     pub fn new(xconn: ewmh::Connection, idx: i32) -> Self {
         let atoms = InternedAtoms::new(&xconn);
+        let root = xconn.get_setup()
+            .roots()
+            .nth(idx as usize)
+            .expect("Could not get root id")
+            .root();
         Self {
             conn: xconn,
             atoms: atoms,
+            root: root,
             cursor: 0,
             current_scr: idx,
         }
@@ -454,6 +466,164 @@ impl XConn {
                 error!("The X server closed the connection, exiting");
                 std::process::exit(10);
             })
+        }
+    }
+
+    pub fn process_raw_event(&self, event: xcb::GenericEvent) -> XEvent {
+        use XEvent::*;
+        #[allow(unused_imports)]
+        use xcb:: {
+            ConfigureNotifyEvent,
+            ConfigureRequestEvent,
+            MapRequestEvent,
+            MapNotifyEvent,
+            UnmapNotifyEvent,
+            DestroyNotifyEvent,
+            EnterNotifyEvent,
+            LeaveNotifyEvent,
+            MotionNotifyEvent,
+            ReparentNotifyEvent,
+            PropertyNotifyEvent,
+            KeyPressEvent,
+            ButtonPressEvent,
+            ClientMessageEvent,
+        };
+        match event.response_type() & !0x80 {
+            xcb::CONFIGURE_NOTIFY => {
+                let event = cast!(ConfigureNotifyEvent, event);
+
+                ConfigureNotify(ConfigureEvent{
+                    id: event.window(),
+                    geom: Geometry {
+                        x: event.x() as i32,
+                        y: event.y() as i32,
+                        width: event.width() as i32,
+                        height: event.height() as i32,
+                    },
+                    is_root: event.window() == self.root,
+                })
+            }
+            xcb::CONFIGURE_REQUEST => {
+                let event = cast!(ConfigureRequestEvent, event);
+
+                ConfigureRequest(ConfigureEvent{
+                    id: event.window(),
+                    geom: Geometry {
+                        x: event.x() as i32,
+                        y: event.y() as i32,
+                        width: event.width() as i32,
+                        height: event.height() as i32,
+                    },
+                    is_root: event.window() == self.root,
+                })
+            },
+            xcb::MAP_REQUEST => {
+                let event = cast!(MapRequestEvent, event);
+                let override_redirect = 
+                if let Some(attrs) = self.get_window_attributes(event.window()) {
+                    attrs.override_redirect()
+                } else {false};
+
+                MapRequest(event.window(), override_redirect)
+            },
+            xcb::MAP_NOTIFY => {
+                let event = cast!(MapNotifyEvent, event);
+
+                MapNotify(event.window())
+            },
+            xcb::UNMAP_NOTIFY => {
+                let event = cast!(UnmapNotifyEvent, event);
+
+                UnmapNotify(event.window())
+            },
+            xcb::DESTROY_NOTIFY => {
+                let event = cast!(DestroyNotifyEvent, event);
+
+                DestroyNotify(event.window())
+            },
+            xcb::ENTER_NOTIFY => {
+                let event = cast!(EnterNotifyEvent, event);
+
+                EnterNotify(event.child())
+            },
+            xcb::LEAVE_NOTIFY => {
+                let event = cast!(LeaveNotifyEvent, event);
+
+                LeaveNotify(event.child())
+            },
+            xcb::MOTION_NOTIFY => {
+                let event = cast!(MotionNotifyEvent, event);
+
+                MotionNotify(Point {
+                    x: event.root_x() as i32,
+                    y: event.root_y() as i32,
+                })
+            },
+            xcb::REPARENT_NOTIFY => {
+                let event = cast!(ReparentNotifyEvent, event);
+
+                ReparentNotify(event.window())
+            },
+            xcb::PROPERTY_NOTIFY => {
+                let event = cast!(PropertyNotifyEvent, event);
+
+                PropertyNotify(PropertyEvent {
+                    id: event.window(),
+                    atom: event.atom(),
+                    time: event.time(),
+                })
+            },
+            xcb::KEY_PRESS => {
+                let event = cast!(KeyPressEvent, event);
+
+                let (modmask, keysym) = self.lookup_keysym(event);
+
+                KeyPress(KeypressEvent {
+                    mask: modmask,
+                    keysym: keysym,
+                })
+            },
+            xcb::KEY_RELEASE => KeyRelease,
+            xcb::BUTTON_PRESS => {
+                let _event = cast!(ButtonPressEvent, event);
+
+                todo!()
+            },
+            xcb::BUTTON_RELEASE => ButtonRelease,
+            xcb::CLIENT_MESSAGE => {
+                let event = cast!(ClientMessageEvent, event);
+                let data = event.data();
+                let window = event.window();
+
+                match event.format() {
+                    8 => {
+                        let data = ClientMessageData::try_from(
+                            data.data8()
+                        ).expect("Invalid client data");
+                        assert!(data.is_u8());
+
+                        ClientMessage(window, data)
+                    }
+                    16 => {
+                        let data = ClientMessageData::try_from(
+                            data.data16()
+                        ).expect("Invalid client data");
+                        assert!(data.is_u16());
+                        
+                        ClientMessage(window, data)
+                    }
+                    32 => {
+                        let data = ClientMessageData::try_from(
+                            data.data32()
+                        ).expect("Invalid client data");
+                        assert!(data.is_u32());
+                        
+                        ClientMessage(window, data)
+                    }
+                    _ => unreachable!() //todo: make this function fallible
+                }
+            },
+            unhandled => Unknown(unhandled),
         }
     }
 }
