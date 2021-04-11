@@ -42,6 +42,13 @@ pub enum Direction {
     Backward,
 }
 
+/// A specific point on a window.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Point {
+    pub x: i32,
+    pub y: i32,
+}
+
 /// The Geometry of a given window.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Geometry {
