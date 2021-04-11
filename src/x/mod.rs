@@ -11,5 +11,6 @@ pub mod event;
 pub use xserver as core;
 
 pub use self::core::{XConn, XWindow, XWindowID, Atom};
+pub use self::event::XEvent;
 pub use self::icccm::Icccm;
 pub use self::ewmh::Ewmh;
