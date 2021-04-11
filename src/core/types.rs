@@ -1,12 +1,11 @@
 //! Various data types and definitions for use within RaccoonWM.
-use std::convert::TryInto;
 use xcb_util::icccm::{self, WmState};
 use xcb::xproto;
 
 use std::ops::Deref;
 
 use crate::layout::LayoutType;
-use crate::x::core::XConn;
+use crate::x::{XConn, Atom};
 use crate::WindowManager;
 
 pub use crate::core::{Ring, Selector};
@@ -96,7 +95,7 @@ impl From<WmState> for WindowState {
 /// Convenience wrapper around a Vec of NetWindowStates.
 #[derive(Debug, Clone)]
 pub struct NetWindowStates {
-    states: Vec<xcb::Atom>,
+    states: Vec<Atom>,
 }
 
 impl NetWindowStates {
@@ -106,15 +105,15 @@ impl NetWindowStates {
         }
     }
 
-    pub fn contains(&self, prop: xcb::Atom) -> bool {
+    pub fn contains(&self, prop: Atom) -> bool {
         self.states.contains(&prop)
     }
 
-    pub fn add(&mut self, prop: xcb::Atom) {
+    pub fn add(&mut self, prop: Atom) {
         self.states.push(prop)
     }
 
-    pub fn remove(&mut self, prop: xcb::Atom) -> xcb::Atom {
+    pub fn remove(&mut self, prop: Atom) -> Atom {
         for (idx, atom) in self.states.iter().enumerate() {
             if *atom == prop {
                 return self.states.remove(idx)
@@ -125,8 +124,8 @@ impl NetWindowStates {
     }
 }
 
-impl From<Vec<xcb::Atom>> for NetWindowStates {
-    fn from(from: Vec<xcb::Atom>) -> Self {
+impl From<Vec<Atom>> for NetWindowStates {
+    fn from(from: Vec<Atom>) -> Self {
         Self {
             states: from
         }
@@ -134,7 +133,7 @@ impl From<Vec<xcb::Atom>> for NetWindowStates {
 }
 
 impl Deref for NetWindowStates {
-    type Target = [xcb::Atom];
+    type Target = [Atom];
 
     fn deref(&self) -> &Self::Target {
         self.states.as_slice()
@@ -160,7 +159,7 @@ pub enum NetWindowState {
 }
 
 impl NetWindowState {
-    pub fn from_atom(atom: xcb::Atom, conn: &XConn) -> Option<Self> {
+    pub fn from_atom(atom: Atom, conn: &XConn) -> Option<Self> {
         let raw = conn.get_raw();
         if atom == raw.WM_STATE_MODAL() {
             return Some(Self::Modal)
@@ -209,48 +208,6 @@ impl From<LayoutType> for WinLayoutState {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
-pub enum ClientMessageData {
-    Byte([u8; 20]),
-    Word([u16; 10]),
-    DWord([u32; 5]),
-}
-
-impl ClientMessageData {
-    pub fn from_event(event: &xproto::ClientMessageEvent) -> Self {
-        let data = event.data();
-        match event.format() {
-            8 => {
-                Self::Byte(data.data8()[0..20]
-                .try_into().expect("Byte: Incorrect conversion"))
-            }
-            16 => {
-                Self::Word(data.data16()[0..10]
-                .try_into().expect("Word: Incorrect conversion"))
-            }
-            32 => {
-                Self::DWord(data.data32()[0..5]
-                .try_into().expect("DWord: Incorrect conversion"))
-            }
-            _ => {unreachable!()}
-        }
-    }
-
-    #[inline(always)]
-    pub fn is_8(&self) -> bool {
-        if let Self::Byte(_) = self {true} else {false}
-    }
-
-    #[inline(always)]
-    pub fn is_16(&self) -> bool {
-        if let Self::Word(_) = self {true} else {false}
-    }
-
-    pub fn is_32(&self) -> bool {
-        if let Self::DWord(_) = self {true} else {false}
-    }
-}
-
 /// The style for the window border.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum BorderStyle {
@@ -276,7 +233,7 @@ pub enum WindowType {
 
 impl WindowType {
     /// Gets the atom type from an atom and an XConn.
-    pub fn from_atom(atom: xcb::Atom, conn: &XConn) -> Option<Self> {
+    pub fn from_atom(atom: Atom, conn: &XConn) -> Option<Self> {
         use WindowType::*;
 
         if atom == conn.atoms.WM_WINDOW_TYPE_DESKTOP {
@@ -336,7 +293,7 @@ pub struct XWinProperties {
     pub(crate) wm_size_hints: Option<icccm::SizeHints>,
     pub(crate) wm_hints: Option<icccm::WmHints>,
     pub(crate) wm_class: (String, String), //Instance, Class
-    pub(crate) wm_protocols: Option<Vec<xcb::Atom>>,
+    pub(crate) wm_protocols: Option<Vec<Atom>>,
     pub(crate) wm_state: WindowState,
 }
 
@@ -392,7 +349,7 @@ impl XWinProperties {
         (&self.wm_class.0, &self.wm_class.1)
     }
 
-    pub fn window_type(&self) -> Option<&[xcb::Atom]> {
+    pub fn window_type(&self) -> Option<&[Atom]> {
         if let Some(prtcls) = &self.wm_protocols {
             return Some(&prtcls)
         } else {

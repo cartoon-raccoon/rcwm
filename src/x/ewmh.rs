@@ -4,23 +4,27 @@
 
 use xcb_util::ewmh;
 
-use crate::x::{XConn, XWindowID};
+use crate::x::core::{
+    Atom,
+    XConn, 
+    XWindowID, 
+    ClientMessageData as CMData
+};
 use crate::core::Workspace;
 use crate::types::{
-    ClientMessageData as CMData, 
     NetWindowStates
 };
 
 pub trait Ewmh {
-    fn get_window_type(&self, window: XWindowID) -> Option<Vec<xcb::Atom>>;
+    fn get_window_type(&self, window: XWindowID) -> Option<Vec<Atom>>;
     fn get_window_states(&self, window: XWindowID) -> NetWindowStates;
-    fn set_supported(&self, screen_idx: i32, atoms: &[xcb::Atom]);
-    fn set_wm_state(&self, window: XWindowID, atoms: &[xcb::Atom]);
+    fn set_supported(&self, screen_idx: i32, atoms: &[Atom]);
+    fn set_wm_state(&self, window: XWindowID, atoms: &[Atom]);
 }
 
 impl Ewmh for XConn {
     //fn get_wm_name()
-    fn get_window_type(&self, window: XWindowID) -> Option<Vec<xcb::Atom>> {
+    fn get_window_type(&self, window: XWindowID) -> Option<Vec<Atom>> {
         debug!("Getting type for window {}", window);
 
         ewmh::get_wm_window_type(&self.conn, window)
@@ -40,11 +44,11 @@ impl Ewmh for XConn {
         }
     }
 
-    fn set_supported(&self, screen_idx: i32, atoms: &[xcb::Atom]) {
+    fn set_supported(&self, screen_idx: i32, atoms: &[Atom]) {
         ewmh::set_supported(&self.conn, screen_idx, atoms);
     }
 
-    fn set_wm_state(&self, window: XWindowID, atoms: &[xcb::Atom]) {
+    fn set_wm_state(&self, window: XWindowID, atoms: &[Atom]) {
         ewmh::set_wm_state(&self.conn, window, atoms);
     }
 }
@@ -61,11 +65,11 @@ pub(crate) fn handle_wm_state(
     data: CMData,
 ) {
     //todo: implement handling
-    assert!(data.is_32());
+    assert!(data.is_u32());
 
     let raw = conn.get_raw();
 
-    if let CMData::DWord(data) = data {
+    if let CMData::U32(data) = data {
         let action = data[0];
         let prop1 = data[1];
         let prop2 = data[2];
@@ -126,7 +130,7 @@ pub(crate) fn handle_wm_state(
 }
 
 //todo: make this return shit
-fn resolve_state(conn: &ewmh::Connection, state: xcb::Atom) {
+fn resolve_state(conn: &ewmh::Connection, state: Atom) {
     if state == conn.WM_STATE_MODAL() {
         debug!("State is modal");
     } else if state == conn.WM_STATE_STICKY() {

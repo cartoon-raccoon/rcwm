@@ -11,40 +11,43 @@ use crate::window::Client;
 use crate::utils;
 use crate::types::Geometry;
 
+pub use super::event::*;
+
 // #[derive(Clone, Copy, Debug)]
 // pub enum CursorIndex {
 //     LeftCursor,
 // }
+pub type Atom = xcb::Atom;
 
 /// The list of atoms interned from the X Server by the WM.
 #[allow(non_snake_case)]
 #[derive(Clone, Copy)]
 pub struct InternedAtoms {
-    pub SUPPORTED: xcb::Atom,
+    pub SUPPORTED: Atom,
     
-    pub WM_DELETE_WINDOW: xcb::Atom,
-    pub WM_TAKE_FOCUS: xcb::Atom,
+    pub WM_DELETE_WINDOW: Atom,
+    pub WM_TAKE_FOCUS: Atom,
 
-    pub WM_PROTOCOLS: xcb::Atom,
+    pub WM_PROTOCOLS: Atom,
 
-    pub WM_WINDOW_TYPE_DESKTOP: xcb::Atom,
-    pub WM_WINDOW_TYPE_DOCK: xcb::Atom,
-    pub WM_WINDOW_TYPE_TOOLBAR: xcb::Atom,
-    pub WM_WINDOW_TYPE_MENU: xcb::Atom,
-    pub WM_WINDOW_TYPE_UTILITY: xcb::Atom,
-    pub WM_WINDOW_TYPE_SPLASH: xcb::Atom,
-    pub WM_WINDOW_TYPE_DIALOG: xcb::Atom,
-    pub WM_WINDOW_TYPE_DROPDOWN_MENU: xcb::Atom,
-    pub WM_WINDOW_TYPE_NOTIFICATION: xcb::Atom,
-    pub WM_WINDOW_TYPE_NORMAL: xcb::Atom,
-    pub WM_STATE: xcb::Atom,
+    pub WM_WINDOW_TYPE_DESKTOP: Atom,
+    pub WM_WINDOW_TYPE_DOCK: Atom,
+    pub WM_WINDOW_TYPE_TOOLBAR: Atom,
+    pub WM_WINDOW_TYPE_MENU: Atom,
+    pub WM_WINDOW_TYPE_UTILITY: Atom,
+    pub WM_WINDOW_TYPE_SPLASH: Atom,
+    pub WM_WINDOW_TYPE_DIALOG: Atom,
+    pub WM_WINDOW_TYPE_DROPDOWN_MENU: Atom,
+    pub WM_WINDOW_TYPE_NOTIFICATION: Atom,
+    pub WM_WINDOW_TYPE_NORMAL: Atom,
+    pub WM_STATE: Atom,
 }
 
 /// You really shouldn't be using this.
 impl Index<usize> for InternedAtoms {
-    type Output = xcb::Atom;
+    type Output = Atom;
 
-    fn index(&self, idx: usize) -> &xcb::Atom {
+    fn index(&self, idx: usize) -> &Atom {
         match idx {
             0 => &self.SUPPORTED,
             1 => &self.WM_DELETE_WINDOW,

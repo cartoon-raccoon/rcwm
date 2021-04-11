@@ -4,6 +4,7 @@
 use std::collections::HashSet;
 
 use crate::x::core::{
+    Atom,
     XConn,
     XWindow, 
     XWindowID
@@ -120,7 +121,7 @@ pub struct Client {
     mapped_state: WindowState,
     net_states: NetWindowStates,
     layout_state: WinLayoutState,
-    protocols: HashSet<xcb::Atom>,
+    protocols: HashSet<Atom>,
 }
 
 impl PartialEq for Client {
@@ -335,11 +336,11 @@ impl Client {
         conn.set_wm_state(self.id(), &self.net_states);
     }
 
-    pub(crate) fn add_wm_state(&mut self, state: xcb::Atom) {
+    pub(crate) fn add_wm_state(&mut self, state: Atom) {
         self.net_states.add(state)
     }
 
-    pub(crate) fn remove_wm_state(&mut self, state: xcb::Atom) {
+    pub(crate) fn remove_wm_state(&mut self, state: Atom) {
         if self.net_states.contains(state) {
             self.net_states.remove(state);
         }
@@ -453,7 +454,7 @@ impl Client {
     }
 
     /// Does the client support this protocol?
-    pub fn supports(&self, prtcl: xcb::Atom) -> bool {
+    pub fn supports(&self, prtcl: Atom) -> bool {
         self.protocols.contains(&prtcl)
     }
 }

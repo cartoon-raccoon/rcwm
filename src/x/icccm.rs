@@ -4,7 +4,7 @@
 
 use xcb_util::icccm;
 
-use crate::x::{XConn, XWindowID};
+use crate::x::{XConn, XWindowID, Atom};
 use crate::types::{XWinProperties, WindowState};
 
 /// Exposes ICCCM functionality for an object holding an XCB connection.
@@ -22,7 +22,7 @@ pub trait Icccm {
     fn get_wm_size_hints(&self, window: XWindowID) -> Option<icccm::SizeHints>;
     fn get_wm_hints(&self, window: XWindowID) -> Option<icccm::WmHints>;    
     fn get_wm_class(&self, window: XWindowID) -> Option<(String, String)>;
-    fn get_wm_protocols(&self, window: XWindowID) -> Option<Vec<xcb::Atom>>;
+    fn get_wm_protocols(&self, window: XWindowID) -> Option<Vec<Atom>>;
     fn get_wm_state(&self, window: XWindowID) -> WindowState;
     fn get_wm_transient_for(&self, window: XWindowID) -> Option<XWindowID>;
     fn get_urgency(&self, window: XWindowID) -> bool;
@@ -104,7 +104,7 @@ impl Icccm for XConn {
         }
     }
 
-    fn get_wm_protocols(&self, window: XWindowID) -> Option<Vec<xcb::Atom>> {
+    fn get_wm_protocols(&self, window: XWindowID) -> Option<Vec<Atom>> {
         debug!("Getting protocols for window {}", window);
         match icccm::get_wm_protocols(&self.conn, window, self.atoms.WM_PROTOCOLS)
         .get_reply() {
