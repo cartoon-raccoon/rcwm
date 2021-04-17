@@ -1,6 +1,9 @@
 //! This module defines WindowManager, the main object that runs the
 //! event loop in RaccoonWM.
 pub mod event;
+pub mod state;
+
+pub(crate) use state::WMState;
 
 use xcb_util::{
     ewmh::Connection,
@@ -24,7 +27,8 @@ use crate::layout::LayoutType;
 use crate::config;
 
 /// Whether the mouse button is pressed.
-enum MouseMode {
+#[derive(Debug, Clone, Copy)]
+pub(super) enum MouseMode {
     None,
     Move,
     Resize,

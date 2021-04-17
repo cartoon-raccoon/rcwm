@@ -19,7 +19,7 @@ const MAX_WKSPACES: usize = 10;
 /// The main `Desktop` used by `WindowManager`.
 #[derive(Clone, Default)]
 pub struct Desktop {
-    workspaces: Ring<Workspace>,
+    pub(crate) workspaces: Ring<Workspace>,
     current: usize,
 }
 
