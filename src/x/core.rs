@@ -1,13 +1,18 @@
 use std::ops::Index;
 
 use xcb_util::ewmh;
+use thiserror::Error;
 
 use crate::types::Geometry;
 
 pub use super::xserver::XCBConnection;
 pub use super::event::*;
 
-pub type Atom = xcb::Atom;
+pub type Atom = u32;
+pub type ModMask = u32;
+pub type KeySym = u32;
+pub type KeyCode = u8;
+pub type ButtonMask = u32;
 
 /// The list of atoms interned from the X Server by the WM.
 #[allow(non_snake_case)]
@@ -155,4 +160,35 @@ impl XWindow {
     pub fn update_pos_y(&mut self, dy: i32) {
         self.geom.y += dy;
     }
+}
+
+#[derive(Debug, Error, Clone, Copy)]
+pub enum XError {
+    #[error("Could not establish a connection to the X server.")]
+    Connection,
+    #[error("Could not complete specified request.")]
+    RequestError,
+}
+
+pub type Result<T> = ::core::result::Result<T, XError>;
+
+pub trait XConn {
+    fn get_root(&self) -> XWindowID;
+    fn get_geometry(&self, window: XWindowID) -> Geometry;
+    fn get_window_attributes(&self, window: XWindowID);
+    fn get_root_geom(&self) -> Geometry {
+        self.get_geometry(self.get_root())
+    }
+    fn set_root_scr(&mut self, scr: i32);
+    fn query_tree(&self) -> Vec<XWindowID>;
+    fn change_window_attributes(&self, window: XWindowID, attrs: &[(u32, u32)]);
+    fn configure_window(&self, window: XWindowID, attrs: &[(u16, u32)]);
+    fn reparent_window(&self, window: XWindowID, parent: XWindowID);
+    // fn create_window(&self);
+    fn map_window(&self, window: XWindowID);
+    fn unmap_window(&self, window: XWindowID);
+    fn destroy_window(&self, window: XWindowID);
+    fn set_input_focus(&self, window: XWindowID);
+    fn set_geometry(&self, window: XWindowID, geom: Geometry);
+    fn set_property(&self, window: XWindowID);
 }
