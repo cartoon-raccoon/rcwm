@@ -17,6 +17,8 @@ pub use crate::core::{
 #[macro_use]
 extern crate log as logger;
 
+use std::error::Error;
+
 use manager::WindowManager;
 
 use xcb::base::Connection;
@@ -26,7 +28,7 @@ use nix::sys::signal::{
     signal, Signal, SigHandler
 };
 
-fn main() -> anyhow::Result<()> {
+fn main() -> Result<(), Box<dyn Error>> {
     unsafe {
         signal(Signal::SIGINT, SigHandler::SigIgn)?;
         signal(Signal::SIGQUIT, SigHandler::SigIgn)?;
