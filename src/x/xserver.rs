@@ -3,7 +3,6 @@
 
 use xcb_util::{ewmh, cursor};
 use xcb_util::keysyms::KeySymbols;
-use anyhow::{Context, Result};
 
 use std::convert::TryFrom;
 
@@ -18,6 +17,12 @@ macro_rules! cast {
     ($etype:ty, $event:expr) => {
         unsafe {xcb::cast_event::<$etype>(&$event)}
     };
+}
+
+impl From<xcb::GenericError> for XError {
+    fn from(_: xcb::GenericError) -> XError {
+        XError::RequestError
+    }
 }
 
 /// Holds a handle to an XCB connection, as well as other attributes
@@ -81,9 +86,8 @@ impl XCBConnection {
 
     /// Get a list of all active windows.
     pub fn query_tree(&self, window: XWindowID) -> Result<Vec<XWindowID>> {
-        xcb::query_tree(&self.conn, window).get_reply()
-            .map(|ok| ok.children().to_owned())
-            .map_err(|err| anyhow::Error::new(err))
+        Ok(xcb::query_tree(&self.conn, window).get_reply()
+            .map(|ok| ok.children().to_owned())?)
     }
 
     /// Create the cursor.
@@ -114,8 +118,7 @@ impl XCBConnection {
 
     pub fn change_window_attributes_checked(&self, window: XWindowID, attrs: &[(u32, u32)]) -> Result<()> {
         //debug!("Changing window attributes");
-        xcb::change_window_attributes_checked(&self.conn, window, attrs).request_check()
-            .with_context(|| String::from("Could not change window attributes"))
+        Ok(xcb::change_window_attributes_checked(&self.conn, window, attrs).request_check()?)
     }
 
     pub fn configure_window(&self, window: XWindowID, attrs: &[(u16, u32)]) {
@@ -208,10 +211,7 @@ impl XCBConnection {
 
     pub fn get_geometry(&self, window_id: XWindowID) -> Result<Geometry> {
         debug!("Getting geometry");
-        xcb::get_geometry(&self.conn, window_id).get_reply()
-            .with_context(|| {
-                String::from("Failed to get window geometry")
-            })
+        Ok(xcb::get_geometry(&self.conn, window_id).get_reply()
             .map(|ok| Geometry::from(
                 (
                     ok.x() as i32, 
@@ -219,7 +219,7 @@ impl XCBConnection {
                     ok.width() as i32, 
                     ok.height() as i32,
                 )
-            ))
+            ))?)
     }
 
     pub fn lookup_keysym(&self, event:&xcb::KeyPressEvent) -> (xcb::ModMask, xcb::Keysym) {
@@ -300,8 +300,7 @@ impl XCBConnection {
     pub fn query_pointer(&self, window_id: XWindowID) -> Result<xcb::QueryPointerReply> {
         debug!("Querying pointer location for window {}", window_id);
 
-        xcb::query_pointer(&self.conn, window_id).get_reply()
-        .with_context(|| String::from("Failed to query pointer"))
+        Ok(xcb::query_pointer(&self.conn, window_id).get_reply()?)
     }
 
     pub fn next_event(&self) -> xcb::GenericEvent {
