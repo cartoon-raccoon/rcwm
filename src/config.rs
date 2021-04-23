@@ -1,9 +1,9 @@
-use x11::keysym;
 use xcb::ModMask;
 
 use crate::types::{
     Direction::*, Keybind,
-    SHIFT, CTRL, ModKey, modkey
+    SHIFT, CTRL, ModKey, modkey,
+    keysym,
 };
 use crate::utils;
 
