@@ -63,6 +63,11 @@ impl XCBConnection {
         self.conn.get_setup()
     }
 
+    /// Returns atoms supported by the connection.
+    pub fn get_atoms(&self) -> InternedAtoms {
+        self.atoms
+    }
+
     /// Get the root ID of the current screen.
     pub fn get_root_id(&self) -> XWindowID {
         self.conn.get_setup()
