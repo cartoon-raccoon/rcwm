@@ -1,11 +1,12 @@
 todo: 
-    start adding icccm support
-    add cycling masters
     add check for if window is top-level
         add placing wm_state on top-level window
+    fix up ewmh net_wm_state with handlers
+    add fulfillment of other config requests
+    add method to add floating window to tiled setup
     migrate to std Result for all fallible functions
+    decouple xcb underlying API from XCBConnection
     add receiving and interpreting client messages
-    start adding ewmh support
     implement tiling windows into closest position onscreen
     transition from master window to master region
         (allows for more than 1 master window)
@@ -18,25 +19,12 @@ todo:
     add ewmh and icccm support
 
 design goals:
-    full ewmh + icccm support
+    most ewmh + icccm support
     builtin bar + support for other bars
     ipc via separate client program
     builin scripting language
     config file in toml? lua? builtin scripting language?
     reparenting?
-
-icccm - supported:
-WM_NAME
-WM_ICON_NAME
-WM_NORMAL_HINTS (partially)
-WM_HINTS (partially)
-WM_CLASS
-WM_TRANSIENT_FOR
-WM_PROTOCOLS - WM_DELETE_WINDOW
-WM_STATE (partially)
-
-ewmh - supported:
-nothing yet lol
 
 conventions and rules
 - pass windows around by their id
